@@ -33,6 +33,11 @@ namespace _Scripts.Suxghui.Player.Input
             OnFlyKeyPress?.Invoke(context.ReadValue<Vector2>(), context.performed);
         }
 
+        public void OnBoost(InputAction.CallbackContext context)
+        {
+            throw new NotImplementedException();
+        }
+
         private void OnDisable()
         {
             if (_playerAction != null)
