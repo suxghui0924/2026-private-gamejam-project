@@ -35,6 +35,11 @@ namespace _Scripts.Suxghui.Player.Agent
 
         public void Move(Vector3 direction)
         {
+            Move(direction, 1f);
+        }
+
+        public void Move(Vector3 direction, float speedMultiplier)
+        {
             if (IsMovementBlock)
                 return;
 
@@ -43,9 +48,9 @@ namespace _Scripts.Suxghui.Player.Agent
                 ApplyCurve(direction.y),
                 ApplyCurve(direction.z));
             Vector3 velocity = new Vector3(
-                curvedDirection.x * MoveSpeed,
-                curvedDirection.y * VerticalSpeed,
-                curvedDirection.z * MoveSpeed);
+                curvedDirection.x * MoveSpeed * speedMultiplier,
+                curvedDirection.y * VerticalSpeed * speedMultiplier,
+                curvedDirection.z * MoveSpeed * speedMultiplier);
             CurrentVelocity = velocity;
 
             if (RigidBody != null && RigidBody.transform == MoveTarget && !RigidBody.isKinematic)

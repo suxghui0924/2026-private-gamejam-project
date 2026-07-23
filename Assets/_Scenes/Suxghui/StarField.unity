@@ -162,7 +162,7 @@ MonoBehaviour:
     LookAtTarget: {fileID: 0}
     CustomLookAtTarget: 0
   Lens:
-    FieldOfView: 66.1
+    FieldOfView: 65
     OrthographicSize: 5
     NearClipPlane: 0.3
     FarClipPlane: 1000
@@ -261,7 +261,7 @@ MonoBehaviour:
   priority: 0
   blendDistance: 0
   weight: 1
-  sharedProfile: {fileID: 11400000, guid: 62a18bcc19d46ef44a85e18a9c5fbb6f, type: 2}
+  sharedProfile: {fileID: 11400000, guid: 8ab62f6da676496a8f2f0f9ff1d5d5df, type: 2}
 --- !u!4 &197616751
 Transform:
   m_ObjectHideFlags: 0
@@ -5407,6 +5407,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7598115113932545078, guid: 52538fe263a47754db86c3ad370248b9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 560986119}
+    - targetCorrespondingSourceObject: {fileID: 7598115113932545078, guid: 52538fe263a47754db86c3ad370248b9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1013319363}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7078037779783452300, guid: 52538fe263a47754db86c3ad370248b9, type: 3}
       insertIndex: -1
@@ -5438,6 +5441,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.Player.SpaceShipAgent
   <MovementComponent>k__BackingField: {fileID: 1174217702}
+  <HealthComponent>k__BackingField: {fileID: 1013319364}
   <PlayerInput>k__BackingField: {fileID: 11400000, guid: 128abab733e2fc94ea1b1f2e3a810af8, type: 2}
   gameplayCamera: {fileID: 975411760}
   visualRoot: {fileID: 918997520}
@@ -5449,6 +5453,7 @@ MonoBehaviour:
   steerResponse: 6
   hideCursorOnEnable: 1
   cinemaCamera: {fileID: 2237378}
+  boosterSettings: {fileID: 11400000, guid: 0b3f6e4f7d9a4d1e8c2b6a5f4e3d2c1b, type: 2}
   defaultFov: 65
   movingFov: 75
   fovSharpness: 6
@@ -5543,7 +5548,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 66.1
+  field of view: 65
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -5652,6 +5657,51 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   CustomBlends: {fileID: 0}
+--- !u!1 &1013319362
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1013319363}
+  - component: {fileID: 1013319364}
+  m_Layer: 0
+  m_Name: HealthComponent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1013319363
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1013319362}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 918997520}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1013319364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1013319362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0eabfec25094fb9b862046b0c4cb6e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.Agent.Component.HeatlhComponent
+  MAXHEALTH: 100
 --- !u!1 &1174217700
 GameObject:
   m_ObjectHideFlags: 0
@@ -5701,6 +5751,30 @@ MonoBehaviour:
   <MoveTarget>k__BackingField: {fileID: 918997520}
   <MoveSpeed>k__BackingField: 8
   <VerticalSpeed>k__BackingField: 6
+  <MovementCurve>k__BackingField:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   <IsMovementBlock>k__BackingField: 0
 --- !u!54 &1174217703
 Rigidbody:

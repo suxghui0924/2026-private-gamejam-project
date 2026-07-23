@@ -11,6 +11,7 @@ namespace _Scripts.Suxghui.Player.Input
 
         public event Action<Vector2, bool> OnMoveKeyPress;
         public event Action<Vector2, bool> OnFlyKeyPress;
+        public event Action<bool> OnBoosterPress;
 
         private void OnEnable()
         {
@@ -31,6 +32,11 @@ namespace _Scripts.Suxghui.Player.Input
         public void OnFly(InputAction.CallbackContext context)
         {
             OnFlyKeyPress?.Invoke(context.ReadValue<Vector2>(), context.performed);
+        }
+
+        public void OnBoost(InputAction.CallbackContext context)
+        {
+            OnBoosterPress?.Invoke(context.ReadValueAsButton());
         }
 
         private void OnDisable()

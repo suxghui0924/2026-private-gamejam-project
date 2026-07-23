@@ -23,6 +23,7 @@ namespace _Scripts.Suxghui.Player
 
         [Header("Camera Feel")]
         [SerializeField] private CinemachineCamera cinemaCamera;
+        [SerializeField] private BoosterSettingsSO boosterSettings;
         [SerializeField, Min(1f)] private float defaultFov = 65f;
         [SerializeField, Min(1f)] private float movingFov = 75f;
         [SerializeField, Min(0f)] private float fovSharpness = 6f;
@@ -37,6 +38,8 @@ namespace _Scripts.Suxghui.Player
         private float _pitch;
         private float _roll;
         private float _steerInput;
+        private float _boosterAmount;
+        private bool _boosterInput;
         private Quaternion _initialShipRotation;
 
         protected override void Awake()
@@ -59,10 +62,12 @@ namespace _Scripts.Suxghui.Player
 
             PlayerInput.OnMoveKeyPress += HandleMoveKeyPress;
             PlayerInput.OnFlyKeyPress += HandleFlyKeyPress;
+            PlayerInput.OnBoosterPress += HandleBoosterPress;
         }
 
         private void Update()
         {
+            if (!HealthComponent.CurrentHeartbeat) return;
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
                 SetCursorLocked(false);
 
@@ -76,6 +81,7 @@ namespace _Scripts.Suxghui.Player
 
         private void FixedUpdate()
         {
+            if (!HealthComponent.CurrentHeartbeat) return;
             if (MovementComponent == null)
                 return;
 
@@ -83,7 +89,10 @@ namespace _Scripts.Suxghui.Player
             // This prefab's nose points along local -Y. W/S move forward/backward.
             Vector3 direction = -ship.up * _moveInput.y;
 
-            MovementComponent.Move(Vector3.ClampMagnitude(direction, 1f));
+            float speedMultiplier = boosterSettings != null
+                ? Mathf.Lerp(1f, boosterSettings.SpeedMultiplier, _boosterAmount)
+                : 1f;
+            MovementComponent.Move(Vector3.ClampMagnitude(direction, 1f), speedMultiplier);
         }
 
         private void OnDisable()
@@ -92,9 +101,12 @@ namespace _Scripts.Suxghui.Player
             {
                 PlayerInput.OnMoveKeyPress -= HandleMoveKeyPress;
                 PlayerInput.OnFlyKeyPress -= HandleFlyKeyPress;
+                PlayerInput.OnBoosterPress -= HandleBoosterPress;
             }
 
             MovementComponent?.Stop();
+            _boosterInput = false;
+            _boosterAmount = 0f;
             SetCursorLocked(false);
         }
 
@@ -108,6 +120,11 @@ namespace _Scripts.Suxghui.Player
             _flyInput = isPressed ? input : Vector2.zero;
         }
 
+        private void HandleBoosterPress(bool isPressed)
+        {
+            _boosterInput = isPressed;
+        }
+
         private void UpdateRotation()
         {
             Transform targetVisual = visualRoot != null ? visualRoot : transform;
@@ -115,6 +132,11 @@ namespace _Scripts.Suxghui.Player
                 return;
 
             Vector2 mouseDelta = Mouse.current != null ? Mouse.current.delta.ReadValue() : Vector2.zero;
+            float boosterResponse = boosterSettings != null ? boosterSettings.Acceleration : 12f;
+            _boosterAmount = Mathf.MoveTowards(
+                _boosterAmount,
+                _boosterInput ? 1f : 0f,
+                boosterResponse * Time.deltaTime);
             // Invert vertical mouse input so moving the mouse down raises the nose.
             _pitch = Mathf.Clamp(_pitch - mouseDelta.y * mousePitchSensitivity, -pitchAngle, pitchAngle);
             _steerInput = Mathf.MoveTowards(
@@ -146,6 +168,8 @@ namespace _Scripts.Suxghui.Player
                 ? Mathf.Clamp01(MovementComponent.CurrentSpeed / Mathf.Max(0.01f, maxSpeed))
                 : Mathf.Abs(_moveInput.y);
             float targetFov = Mathf.Lerp(defaultFov, movingFov, moveAmount);
+            if (boosterSettings != null)
+                targetFov = Mathf.Lerp(targetFov, boosterSettings.BoosterFov, _boosterAmount);
             LensSettings lens = cinemaCamera.Lens;
             lens.FieldOfView = Mathf.Lerp(
                 lens.FieldOfView,
@@ -177,8 +201,6 @@ namespace _Scripts.Suxghui.Player
             if (cinemaCamera == null)
                 cinemaCamera = GetComponentInChildren<CinemachineCamera>(true);
 
-            if (cinemaCamera != null)
-                defaultFov = cinemaCamera.Lens.FieldOfView;
         }
 
         private void TryCacheVisualRoot()
