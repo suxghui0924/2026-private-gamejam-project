@@ -7,9 +7,9 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Toon
-  m_Shader: {fileID: -6465566751694194690, guid: 015bc07e76f30974baae9aaea7f867ce, type: 3}
-  m_Parent: {fileID: -876546973899608171, guid: 015bc07e76f30974baae9aaea7f867ce, type: 3}
+  m_Name: _Hologram 1
+  m_Shader: {fileID: -6465566751694194690, guid: c32a9595138bc3240b57c61e31f32c65, type: 3}
+  m_Parent: {fileID: -876546973899608171, guid: c32a9595138bc3240b57c61e31f32c65, type: 3}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
@@ -26,14 +26,13 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Ambientintensity: 0
-    - _QueueControl: 0
-    - _RimLightPower: 3.5
+    - _Lines: 25
+    - _Speed: -0.36
     m_Colors:
-    - _Tint: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.65183866, g: 0.990566, b: 0.62144, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!114 &6128821706147530566
+--- !u!114 &1059517806835043841
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
