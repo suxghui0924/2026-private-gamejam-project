@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: IronOre
   m_EditorClassIdentifier: Assembly-CSharp::LSO_OreSO
   oreName: "\uCCA0 \uAD0C\uC11D"
-  oreColor: {r: 0.509434, g: 0.509434, b: 0.509434, a: 0}
+  oreMaterial: {fileID: 2100000, guid: bad92f407507de24c9221a779aea5fbf, type: 2}
   mineral: {fileID: 11400000, guid: 6088350228b010f4b9bf381c2c1d601e, type: 2}

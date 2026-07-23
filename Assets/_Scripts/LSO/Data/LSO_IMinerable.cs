@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace _Scripts.LSO.Data
 {
     //채굴 가능한가
