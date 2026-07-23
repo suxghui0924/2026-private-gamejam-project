@@ -29,7 +29,7 @@ Material:
     - _Lines: 25
     - _Speed: -0.36
     m_Colors:
-    - _Color: {r: 0.6952202, g: 1, b: 0.6650944, a: 1}
+    - _Color: {r: 0.65183866, g: 0.990566, b: 0.62144, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &1059517806835043841
