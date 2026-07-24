@@ -71,7 +71,7 @@ namespace _Scripts.Suxghui.Player
 
         private void Update()
         {
-            if (!HealthComponent.CurrentHeartbeat)
+            if (!HealthComponent.currentHeartbeat)
             {
                 if (_cursorLocked)
                     SetCursorLocked(false);
