@@ -16133,12 +16133,16 @@ MonoBehaviour:
     responseMultiplier: 1
     forcedCurlAxis: {x: 1, y: 0, z: 0}
     forcedCurlDegrees: 0
+  drillEffectRoots: []
+  drillEffects: []
   drillSurfaceOffset: 0.05
-  drillMinimumStretch: 1
-  drillMaximumStretch: 3.5
+  drillEffectScale: 0.16
+  drillEffectSurfaceOffset: 0.01
   laserRoot: {fileID: 543450652092076988}
   laserMuzzle: {fileID: 6645823806249987686}
-  projectileSpeed: 90
+  laserEndPosition: {fileID: 0}
+  laserLines: []
+  laserEffects: []
   beamTickInterval: 0.1
   beamWidth: 0.08
   extractorRoot: {fileID: 543450651884910036}
@@ -16180,13 +16184,34 @@ MonoBehaviour:
     forcedCurlAxis: {x: 1, y: 0, z: 0}
     forcedCurlDegrees: -42
   extractorBoomChainIndex: 1
-  extractorMinimumStretch: 0.65
-  extractorMaximumStretch: 3.25
   extractorSurfaceOffset: 0.15
   readyColor: {r: 0.2, g: 1, b: 0.72, a: 1}
   outOfRangeColor: {r: 1, g: 0.2, b: 0.18, a: 1}
   laserColor: {r: 0.25, g: 0.9, b: 1, a: 1}
   animationSharpness: 10
+  asteroidExplosionVfxPrefab: {fileID: 0}
+  explosionVfxLifetime: 2.5
+  explosionVfxScale: 1
+  maximumLooseMineralChunks: 5
+  looseMineralScale: 0.18
+  looseScatterMinimumDistance: 0.05
+  looseScatterMaximumDistance: 0.2
+  looseScatterDuration: 0.45
+  extractorPullMinimumDistance: 0.05
+  extractorPullMaximumDistance: 0.2
+  extractorPullDuration: 0.3
+  laserImpulseSource: {fileID: 0}
+  drillImpulseSource: {fileID: 0}
+  extractorImpulseSource: {fileID: 0}
+  laserImpulseStrength: 0.045
+  drillImpulseStrength: 0.14
+  extractorImpulseStrength: 0.16
+  laserImpulseDuration: 0.08
+  drillImpulseDuration: 0.18
+  extractorImpulseDuration: 0.12
+  depletedDrillImpulseMultiplier: 1.35
+  impulseChannel: 1
+  configureImpulseSources: 1
 --- !u!4 &864386303 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5830c0faf87320e46b1e97af10b67aa0, type: 3}
@@ -18968,6 +18993,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6086529577667717913, guid: 2990e140216bed9479a43f640575304c, type: 3}
   m_PrefabInstance: {fileID: 1424437492}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1092000925
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1092000926}
+  m_Layer: 0
+  m_Name: Test
+  m_TagString: Untagged
+  m_Icon: {fileID: 2974397684917235467, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1092000926
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1092000925}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -14128.7295, y: 1779.5353, z: -8129.2725}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1092644089 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6862468559268393379, guid: 2990e140216bed9479a43f640575304c, type: 3}
@@ -45117,3 +45173,4 @@ SceneRoots:
   - {fileID: 703762636}
   - {fileID: 1495917834}
   - {fileID: 894908279}
+  - {fileID: 1092000926}
