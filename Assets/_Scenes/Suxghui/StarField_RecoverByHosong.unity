@@ -16120,6 +16120,7 @@ MonoBehaviour:
   defaultStoneMineral: {fileID: 11400000, guid: d11aa6f8e1204115b1d6bccf8739ea2e, type: 2}
   defaultScorchedMineral: {fileID: 11400000, guid: d22bf99ed66d4ba7a61abbf53eb2ae86, type: 2}
   drillRoot: {fileID: 543450653056336359}
+  drillHead: {fileID: 0}
   drillChain:
     bones:
     - {fileID: 6583733712069751317}
@@ -16133,12 +16134,20 @@ MonoBehaviour:
     responseMultiplier: 1
     forcedCurlAxis: {x: 1, y: 0, z: 0}
     forcedCurlDegrees: 0
-  drillSurfaceOffset: 0.05
+  drillEffectRoots: []
+  drillEffects: []
+  drillRootAimMaximumAngle: 110
   drillMinimumStretch: 1
   drillMaximumStretch: 3.5
+  drillSurfaceOffset: 0.05
+  drillEffectScale: 0.16
+  drillEffectSurfaceOffset: 0.01
   laserRoot: {fileID: 543450652092076988}
   laserMuzzle: {fileID: 6645823806249987686}
-  projectileSpeed: 90
+  laserEffectStart: {fileID: 0}
+  laserEndPosition: {fileID: 0}
+  laserLines: []
+  laserEffects: []
   beamTickInterval: 0.1
   beamWidth: 0.08
   extractorRoot: {fileID: 543450651884910036}
@@ -16180,6 +16189,7 @@ MonoBehaviour:
     forcedCurlAxis: {x: 1, y: 0, z: 0}
     forcedCurlDegrees: -42
   extractorBoomChainIndex: 1
+  extractorRootAimMaximumAngle: 85
   extractorMinimumStretch: 0.65
   extractorMaximumStretch: 3.25
   extractorSurfaceOffset: 0.15
@@ -16187,6 +16197,29 @@ MonoBehaviour:
   outOfRangeColor: {r: 1, g: 0.2, b: 0.18, a: 1}
   laserColor: {r: 0.25, g: 0.9, b: 1, a: 1}
   animationSharpness: 10
+  asteroidExplosionVfxPrefab: {fileID: 0}
+  explosionVfxLifetime: 2.5
+  explosionVfxScale: 1
+  maximumLooseMineralChunks: 5
+  looseMineralScale: 0.18
+  looseScatterMinimumDistance: 0.05
+  looseScatterMaximumDistance: 0.2
+  looseScatterDuration: 0.45
+  extractorPullMinimumDistance: 0.05
+  extractorPullMaximumDistance: 0.2
+  extractorPullDuration: 0.3
+  laserImpulseSource: {fileID: 0}
+  drillImpulseSource: {fileID: 0}
+  extractorImpulseSource: {fileID: 0}
+  laserImpulseStrength: 0.045
+  drillImpulseStrength: 0.14
+  extractorImpulseStrength: 0.16
+  laserImpulseDuration: 0.08
+  drillImpulseDuration: 0.18
+  extractorImpulseDuration: 0.12
+  depletedDrillImpulseMultiplier: 1.35
+  impulseChannel: 1
+  configureImpulseSources: 1
 --- !u!4 &864386303 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5830c0faf87320e46b1e97af10b67aa0, type: 3}
@@ -43917,6 +43950,63 @@ Transform:
   m_Children: []
   m_Father: {fileID: 543450651884910036}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &3987680921623176844
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 982760062343593681, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
+      propertyPath: m_Name
+      value: JetEngineEndVFX
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765603514809287315, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -66.37776
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765603514809287315, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 6.13491
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765603514809287315, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 70.07748
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765603514809287315, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765603514809287315, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765603514809287315, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765603514809287315, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765603514809287315, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765603514809287315, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5765603514809287315, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 08bbbc5360b7a90449f2b20ad3219a03, type: 3}
 --- !u!4 &3988923661172133211
 Transform:
   m_ObjectHideFlags: 0
@@ -45117,3 +45207,4 @@ SceneRoots:
   - {fileID: 703762636}
   - {fileID: 1495917834}
   - {fileID: 894908279}
+  - {fileID: 3987680921623176844}
