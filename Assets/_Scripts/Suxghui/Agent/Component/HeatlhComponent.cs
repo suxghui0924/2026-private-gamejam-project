@@ -10,6 +10,7 @@ namespace _Scripts.Suxghui.Agent.Component
         public event Action<bool> OnDeadInvoke;
 
         public bool currentHeartbeat = true;
+        public bool CurrentHeartbeat => currentHeartbeat;
 
         public int MAXHEALTH { get; private set; } = 100;
 
