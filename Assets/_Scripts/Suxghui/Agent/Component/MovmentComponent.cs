@@ -40,6 +40,11 @@ namespace _Scripts.Suxghui.Player.Agent
 
         public void Move(Vector3 direction, float speedMultiplier)
         {
+            Move(direction, speedMultiplier, Time.fixedDeltaTime);
+        }
+
+        public void Move(Vector3 direction, float speedMultiplier, float deltaTime)
+        {
             if (IsMovementBlock)
                 return;
 
@@ -60,7 +65,7 @@ namespace _Scripts.Suxghui.Player.Agent
             }
 
             if (MoveTarget != null)
-                MoveTarget.position += velocity * Time.fixedDeltaTime;
+                MoveTarget.position += velocity * deltaTime;
         }
 
         public void Stop()

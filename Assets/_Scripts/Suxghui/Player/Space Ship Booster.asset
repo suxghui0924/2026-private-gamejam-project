@@ -11,6 +11,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c9f6c1f5bb843c4b9f2e7f8f3b2a1d0, type: 3}
   m_Enabled: 1
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.Player.BoosterSettingsSO
-  speedMultiplier: 2
-  acceleration: 12
-  boosterFov: 80
+  speedMultiplier: 1.65
+  acceleration: 1.4
+  boosterFov: 68

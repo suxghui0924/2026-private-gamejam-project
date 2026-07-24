@@ -19,6 +19,8 @@ namespace _Scripts.Suxghui.Player
         [SerializeField, Min(0f)] private float pitchAngle = 30f;
         [SerializeField, Min(0f)] private float mousePitchSensitivity = 0.08f;
         [SerializeField, Min(0f)] private float steerResponse = 6f;
+        [SerializeField, Min(0f)] private float forwardAcceleration = 1.8f;
+        [SerializeField, Min(0f)] private float forwardDeceleration = 1.2f;
         [SerializeField] private bool hideCursorOnEnable = true;
 
         [Header("Camera Feel")]
@@ -38,6 +40,8 @@ namespace _Scripts.Suxghui.Player
         private float _pitch;
         private float _roll;
         private float _steerInput;
+        private float _forwardSpeedFactor;
+        private float _fovMoveAmount;
         private float _boosterAmount;
         private bool _boosterInput;
         private Quaternion _initialShipRotation;
@@ -75,24 +79,33 @@ namespace _Scripts.Suxghui.Player
                 SetCursorLocked(true);
 
             UpdateRotation();
+            UpdateMovement(Time.deltaTime);
             UpdateCameraTransform();
             UpdateCameraFov();
         }
 
-        private void FixedUpdate()
+        private void UpdateMovement(float deltaTime)
         {
-            if (!HealthComponent.CurrentHeartbeat) return;
             if (MovementComponent == null)
                 return;
 
             Transform ship = visualRoot != null ? visualRoot : transform;
-            // This prefab's nose points along local -Y. W/S move forward/backward.
-            Vector3 direction = -ship.up * _moveInput.y;
-
-            float speedMultiplier = boosterSettings != null
+            float targetThrottle = Mathf.Clamp(_moveInput.y, -1f, 1f);
+            float targetSpeedMultiplier = boosterSettings != null
                 ? Mathf.Lerp(1f, boosterSettings.SpeedMultiplier, _boosterAmount)
                 : 1f;
-            MovementComponent.Move(Vector3.ClampMagnitude(direction, 1f), speedMultiplier);
+            float targetSpeedFactor = targetThrottle * targetSpeedMultiplier;
+            float throttleResponse = Mathf.Abs(targetSpeedFactor) > Mathf.Abs(_forwardSpeedFactor)
+                ? forwardAcceleration
+                : forwardDeceleration;
+            _forwardSpeedFactor = Mathf.MoveTowards(
+                _forwardSpeedFactor,
+                targetSpeedFactor,
+                throttleResponse * deltaTime);
+
+            // This prefab's nose points along local -Y. W/S move forward/backward.
+            Vector3 direction = -ship.up * _forwardSpeedFactor;
+            MovementComponent.Move(direction, 1f, deltaTime);
         }
 
         private void OnDisable()
@@ -105,6 +118,7 @@ namespace _Scripts.Suxghui.Player
             }
 
             MovementComponent?.Stop();
+            _forwardSpeedFactor = 0f;
             _boosterInput = false;
             _boosterAmount = 0f;
             SetCursorLocked(false);
@@ -167,7 +181,11 @@ namespace _Scripts.Suxghui.Player
             float moveAmount = MovementComponent != null
                 ? Mathf.Clamp01(MovementComponent.CurrentSpeed / Mathf.Max(0.01f, maxSpeed))
                 : Mathf.Abs(_moveInput.y);
-            float targetFov = Mathf.Lerp(defaultFov, movingFov, moveAmount);
+            _fovMoveAmount = Mathf.Lerp(
+                _fovMoveAmount,
+                moveAmount,
+                1f - Mathf.Exp(-fovSharpness * Time.deltaTime));
+            float targetFov = Mathf.Lerp(defaultFov, movingFov, _fovMoveAmount);
             if (boosterSettings != null)
                 targetFov = Mathf.Lerp(targetFov, boosterSettings.BoosterFov, _boosterAmount);
             LensSettings lens = cinemaCamera.Lens;
