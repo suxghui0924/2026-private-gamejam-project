@@ -364,9 +364,13 @@ namespace _Scripts.Suxghui.Mining
 
         [Header("Drill")]
         [SerializeField] private Transform drillRoot;
+        [SerializeField] private Transform drillHead;
         [SerializeField] private ProceduralIkChain drillChain = new ProceduralIkChain();
         [SerializeField] private Transform[] drillEffectRoots = Array.Empty<Transform>();
         [SerializeField] private ParticleSystem[] drillEffects = Array.Empty<ParticleSystem>();
+        [SerializeField, Range(1f, 120f)] private float drillRootAimMaximumAngle = 110f;
+        [SerializeField, Range(0.5f, 1f)] private float drillMinimumStretch = 1f;
+        [SerializeField, Range(1f, 5f)] private float drillMaximumStretch = 3.5f;
         [SerializeField, Min(0f)] private float drillSurfaceOffset = 0.05f;
         [SerializeField, Range(0.01f, 1f)] private float drillEffectScale = 0.16f;
         [SerializeField, Min(0f)] private float drillEffectSurfaceOffset = 0.01f;
@@ -374,6 +378,7 @@ namespace _Scripts.Suxghui.Mining
         [Header("Laser")]
         [SerializeField] private Transform laserRoot;
         [SerializeField] private Transform laserMuzzle;
+        [SerializeField] private Transform laserEffectStart;
         [SerializeField] private Transform laserEndPosition;
         [SerializeField] private LineRenderer[] laserLines = Array.Empty<LineRenderer>();
         [SerializeField] private ParticleSystem[] laserEffects = Array.Empty<ParticleSystem>();
@@ -429,6 +434,9 @@ namespace _Scripts.Suxghui.Mining
         private MiningTechStats _currentStats;
         private Vector3 _drillBaseLocalPosition;
         private Vector3 _drillBaseLocalScale;
+        private Vector3 _drillHeadTipLocalOffset;
+        private Quaternion _drillHeadTipRotationOffset;
+        private bool _drillHeadAttachmentCaptured;
         private Vector3 _extractorBaseLocalPosition;
         private float _drillUseWeight;
         private float _extractorUseWeight;
@@ -441,6 +449,7 @@ namespace _Scripts.Suxghui.Mining
         private bool _upgradeModulesSubscribed;
         private GameManager _upgradeManager;
         private MiningTechSelectionModule _techSelectionModule;
+        private Transform _laserVfxRoot;
         private Vector3 _extractorBoomBaseDirectionLocal;
         private Vector3[] _extractorJawRootOffsetsLocal = Array.Empty<Vector3>();
         private Quaternion[] _extractorJawBaseAnchorRotations = Array.Empty<Quaternion>();
@@ -456,6 +465,7 @@ namespace _Scripts.Suxghui.Mining
             _propertyBlock = new MaterialPropertyBlock();
             CacheReferences();
             EnsureWeaponEffectInstances();
+            CacheReferences();
             EnsureImpulseSources();
             CaptureBasePose();
             EnsureBeam();
@@ -817,7 +827,11 @@ namespace _Scripts.Suxghui.Mining
             if (drillRoot == null)
                 return;
 
-            float targetWeight = _currentType == MiningTechType.Drill && _fireHeld && _targetCanMine ? 1f : 0f;
+            bool hasCompatibleTarget = _currentType == MiningTechType.Drill && _targetCanMine &&
+                                       crossHair != null && crossHair.HasTarget;
+            float targetWeight = hasCompatibleTarget
+                ? _fireHeld ? 1f : 0.65f
+                : 0f;
             _drillUseWeight = Damp(_drillUseWeight, targetWeight);
             drillRoot.localPosition = _drillBaseLocalPosition;
             drillRoot.localScale = _drillBaseLocalScale;
@@ -825,12 +839,21 @@ namespace _Scripts.Suxghui.Mining
             float poseBlend = FrameBlend();
             drillChain.RestorePose(poseBlend);
             drillChain.RestoreAnchor(1f);
-            if (_currentType != MiningTechType.Drill || crossHair == null ||
-                !_targetCanMine || _drillUseWeight <= 0.001f || !drillChain.IsValid)
-                return;
+            if (_currentType == MiningTechType.Drill && crossHair != null &&
+                _targetCanMine && _drillUseWeight > 0.001f && drillChain.IsValid)
+            {
+                Vector3 targetPoint = GetToolSurfacePoint(drillChain.RootPosition, drillSurfaceOffset);
+                float reachWeight = Mathf.Clamp01(_drillUseWeight * 1.35f);
+                drillChain.AimRootAt(targetPoint, reachWeight, drillRootAimMaximumAngle);
+                drillChain.StretchToTarget(
+                    targetPoint,
+                    drillMinimumStretch,
+                    drillMaximumStretch,
+                    reachWeight);
+                drillChain.Solve(targetPoint, 0.85f * reachWeight);
+            }
 
-            Vector3 targetPoint = GetToolSurfacePoint(drillChain.RootPosition, drillSurfaceOffset);
-            drillChain.Solve(targetPoint, 0.85f * _drillUseWeight);
+            AttachDrillHeadToTip();
         }
 
         private void UpdateDrillEffects()
@@ -922,10 +945,12 @@ namespace _Scripts.Suxghui.Mining
                 if (jaw == null || !jaw.IsValid)
                     continue;
 
-                Vector3 targetJawRoot = boom.EndPosition + extractorRoot.TransformVector(
+                Vector3 jawOffset = extractorRoot.TransformVector(
                     boomRotationDelta * _extractorJawRootOffsetsLocal[i]);
+                Vector3 boomDirection = (boom.EndPosition - boom.RootPosition).normalized;
+                jawOffset -= boomDirection * Vector3.Dot(jawOffset, boomDirection);
+                Vector3 targetJawRoot = boom.EndPosition + jawOffset;
                 Quaternion targetJawRotation = boomRotationDelta * _extractorJawBaseAnchorRotations[i];
-                // The jaw meshes are sibling rigs, so their roots must stay welded to the boom tip.
                 jaw.FollowRoot(targetJawRoot, targetJawRotation, 1f);
                 float closeWeight = _fireHeld && _targetCanMine ? _extractorUseWeight : 0f;
                 jaw.ApplyForcedCurl(closeWeight);
@@ -1184,20 +1209,19 @@ namespace _Scripts.Suxghui.Mining
                 drillRoot = discoveredDrill;
             if (!drillChain.TryAutoBind(drillRoot))
                 Debug.LogWarning("WeaponHolder could not find the SpaceShipDrill bone chain.", this);
+            if (drillHead == null || !drillHead.IsChildOf(drillRoot))
+                drillHead = FindDescendant(drillRoot, "Cube.005") ?? FindStaticDrillHead(drillRoot);
 
-            Transform laserVfxRoot = FindDescendant(laserRoot, "LaserVFX");
-            if (laserMuzzle == null)
-                laserMuzzle = FindDescendant(laserVfxRoot, "Laser") ?? laserVfxRoot ?? laserRoot;
-            if (laserEndPosition == null)
-                laserEndPosition = FindDescendant(laserRoot, "LaserEndPos");
-            if (laserLines == null || laserLines.Length == 0)
-                laserLines = laserRoot != null
-                    ? laserRoot.GetComponentsInChildren<LineRenderer>(true)
-                    : Array.Empty<LineRenderer>();
-            if (laserEffects == null || laserEffects.Length == 0)
-                laserEffects = laserRoot != null
-                    ? laserRoot.GetComponentsInChildren<ParticleSystem>(true)
-                    : Array.Empty<ParticleSystem>();
+            laserMuzzle = ResolveLaserStart();
+            _laserVfxRoot = FindDescendant(laserRoot, "LaserVFX");
+            laserEffectStart = FindDescendant(_laserVfxRoot, "Laser");
+            laserEndPosition = FindDescendant(_laserVfxRoot, "LaserEndPos");
+            laserLines = _laserVfxRoot != null
+                ? _laserVfxRoot.GetComponentsInChildren<LineRenderer>(true)
+                : Array.Empty<LineRenderer>();
+            laserEffects = _laserVfxRoot != null
+                ? _laserVfxRoot.GetComponentsInChildren<ParticleSystem>(true)
+                : Array.Empty<ParticleSystem>();
             if (drillEffectRoots == null || drillEffectRoots.Length == 0)
                 drillEffectRoots = FindNamedTransforms(drillRoot, "DrillVFX", 4);
             if (drillEffects == null || drillEffects.Length == 0)
@@ -1215,6 +1239,7 @@ namespace _Scripts.Suxghui.Mining
                 _extractorBaseLocalPosition = extractorRoot.localPosition;
 
             drillChain.CapturePose();
+            CaptureDrillHeadAttachment();
             foreach (ProceduralIkChain chain in extractorChains)
                 chain?.CapturePose();
             CaptureExtractorRig();
@@ -1303,20 +1328,9 @@ namespace _Scripts.Suxghui.Mining
 
         private void EnsureBeam()
         {
-            if (laserLines == null || laserLines.Length == 0)
-            {
-                GameObject beamObject = new GameObject("Continuous Mining Beam");
-                beamObject.transform.SetParent(transform, false);
-                LineRenderer fallbackLine = beamObject.AddComponent<LineRenderer>();
-                fallbackLine.startWidth = beamWidth;
-                fallbackLine.endWidth = beamWidth * 0.6f;
-                fallbackLine.startColor = laserColor;
-                fallbackLine.endColor = new Color(laserColor.r, laserColor.g, laserColor.b, 0.25f);
-                Shader shader = Shader.Find("Sprites/Default");
-                if (shader != null)
-                    fallbackLine.material = new Material(shader) { color = laserColor };
-                laserLines = new[] { fallbackLine };
-            }
+            Transform fallbackBeam = FindDescendant(transform, "Continuous Mining Beam");
+            if (fallbackBeam != null)
+                Destroy(fallbackBeam.gameObject);
 
             foreach (LineRenderer line in laserLines)
             {
@@ -1325,6 +1339,7 @@ namespace _Scripts.Suxghui.Mining
 
                 line.positionCount = 2;
                 line.useWorldSpace = true;
+                line.numCapVertices = Mathf.Max(2, line.numCapVertices);
             }
 
             SetBeamVisible(false, true);
@@ -1355,6 +1370,14 @@ namespace _Scripts.Suxghui.Mining
             if (direction.sqrMagnitude < 0.000001f)
                 direction = originTransform.forward;
             Vector3 end = origin + direction.normalized * beamLength;
+            Vector3 beamDirection = (end - origin).normalized;
+            Vector3 up = laserRoot != null ? laserRoot.up : transform.up;
+            Quaternion startRotation = Quaternion.LookRotation(beamDirection, up);
+
+            if (_laserVfxRoot != null)
+                _laserVfxRoot.SetPositionAndRotation(origin, startRotation);
+            if (laserEffectStart != null)
+                laserEffectStart.SetPositionAndRotation(origin, startRotation);
 
             foreach (LineRenderer line in laserLines)
             {
@@ -1366,7 +1389,9 @@ namespace _Scripts.Suxghui.Mining
             }
 
             if (laserEndPosition != null)
-                laserEndPosition.position = end;
+                laserEndPosition.SetPositionAndRotation(
+                    end,
+                    Quaternion.LookRotation(-beamDirection, up));
         }
 
         private void ApplyWeaponTint(Transform weaponRoot, Color statusColor)
