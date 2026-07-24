@@ -856,6 +856,17 @@ namespace _Scripts.Suxghui.Mining
             AttachDrillHeadToTip();
         }
 
+        private void AttachDrillHeadToTip()
+        {
+            Transform drillTip = drillChain.EndTransform;
+            if (!_drillHeadAttachmentCaptured || drillHead == null || drillTip == null)
+                return;
+
+            drillHead.SetPositionAndRotation(
+                drillTip.TransformPoint(_drillHeadTipLocalOffset),
+                drillTip.rotation * _drillHeadTipRotationOffset);
+        }
+
         private void UpdateDrillEffects()
         {
             Transform drillTip = drillChain.EndTransform;
@@ -1182,8 +1193,7 @@ namespace _Scripts.Suxghui.Mining
             {
                 string objectTag = current.tag;
                 bool isMeteorContainer = current.name.Equals("Meteors", StringComparison.OrdinalIgnoreCase);
-                if (!isMeteorContainer &&
-                    (objectTag == "Stone" || objectTag == "One" || objectTag == "Ore"))
+                if (!isMeteorContainer && (objectTag == "Stone" || objectTag == "Ore"))
                     return current;
 
                 // Keep the nearest individual Meteor.  The scene container is named "Meteors".
@@ -1228,6 +1238,53 @@ namespace _Scripts.Suxghui.Mining
                 drillEffects = CollectParticleSystems(drillEffectRoots, drillRoot);
         }
 
+        private Transform ResolveLaserStart()
+        {
+            if (laserRoot == null)
+                return null;
+
+            Transform configuredStart = FindDescendant(laserRoot, "Start");
+            if (configuredStart != null)
+                return configuredStart;
+
+            Transform barrel = FindDescendant(laserRoot, "Cylinder");
+            Renderer barrelRenderer = barrel != null
+                ? barrel.GetComponentInChildren<Renderer>(true)
+                : null;
+            Vector3 origin = laserRoot.position;
+            Vector3 direction = barrelRenderer != null
+                ? barrelRenderer.bounds.center - origin
+                : barrel != null ? barrel.position - origin : laserRoot.forward;
+            if (direction.sqrMagnitude < 0.000001f)
+                direction = laserRoot.forward;
+            direction.Normalize();
+
+            Vector3 position = barrelRenderer != null
+                ? barrelRenderer.bounds.center + direction * ProjectBoundsExtent(barrelRenderer.bounds.extents, direction)
+                : (barrel != null ? barrel.position : origin) + direction * 0.05f;
+
+            GameObject startObject = new GameObject("Start");
+            Transform start = startObject.transform;
+            start.SetParent(laserRoot, true);
+            start.SetPositionAndRotation(position, CreateBeamRotation(direction, laserRoot.up));
+            return start;
+        }
+
+        private static Transform FindStaticDrillHead(Transform root)
+        {
+            if (root == null)
+                return null;
+
+            MeshRenderer[] renderers = root.GetComponentsInChildren<MeshRenderer>(true);
+            foreach (MeshRenderer renderer in renderers)
+            {
+                if (renderer != null && renderer.transform != root)
+                    return renderer.transform;
+            }
+
+            return null;
+        }
+
         private void CaptureBasePose()
         {
             if (drillRoot != null)
@@ -1243,6 +1300,22 @@ namespace _Scripts.Suxghui.Mining
             foreach (ProceduralIkChain chain in extractorChains)
                 chain?.CapturePose();
             CaptureExtractorRig();
+        }
+
+        private void CaptureDrillHeadAttachment()
+        {
+            _drillHeadAttachmentCaptured = false;
+            Transform drillTip = drillChain.EndTransform;
+            if (drillHead == null || drillTip == null)
+                return;
+
+            // A head under the end bone already follows the rig without a world-space weld.
+            if (drillHead == drillTip || drillHead.IsChildOf(drillTip))
+                return;
+
+            _drillHeadTipLocalOffset = drillTip.InverseTransformPoint(drillHead.position);
+            _drillHeadTipRotationOffset = Quaternion.Inverse(drillTip.rotation) * drillHead.rotation;
+            _drillHeadAttachmentCaptured = true;
         }
 
         private void ApplyMovementPenalty()
@@ -1332,6 +1405,8 @@ namespace _Scripts.Suxghui.Mining
             if (fallbackBeam != null)
                 Destroy(fallbackBeam.gameObject);
 
+            if (laserLines == null)
+                laserLines = Array.Empty<LineRenderer>();
             foreach (LineRenderer line in laserLines)
             {
                 if (line == null)
@@ -1372,7 +1447,7 @@ namespace _Scripts.Suxghui.Mining
             Vector3 end = origin + direction.normalized * beamLength;
             Vector3 beamDirection = (end - origin).normalized;
             Vector3 up = laserRoot != null ? laserRoot.up : transform.up;
-            Quaternion startRotation = Quaternion.LookRotation(beamDirection, up);
+            Quaternion startRotation = CreateBeamRotation(beamDirection, up);
 
             if (_laserVfxRoot != null)
                 _laserVfxRoot.SetPositionAndRotation(origin, startRotation);
@@ -1391,7 +1466,33 @@ namespace _Scripts.Suxghui.Mining
             if (laserEndPosition != null)
                 laserEndPosition.SetPositionAndRotation(
                     end,
-                    Quaternion.LookRotation(-beamDirection, up));
+                    CreateBeamRotation(-beamDirection, up));
+        }
+
+        private static float ProjectBoundsExtent(Vector3 extents, Vector3 direction)
+        {
+            Vector3 absoluteDirection = new Vector3(
+                Mathf.Abs(direction.x),
+                Mathf.Abs(direction.y),
+                Mathf.Abs(direction.z));
+            return Vector3.Dot(extents, absoluteDirection);
+        }
+
+        private static Quaternion CreateBeamRotation(Vector3 direction, Vector3 preferredUp)
+        {
+            if (direction.sqrMagnitude < 0.000001f)
+                return Quaternion.identity;
+
+            direction.Normalize();
+            if (preferredUp.sqrMagnitude < 0.000001f ||
+                Mathf.Abs(Vector3.Dot(direction, preferredUp.normalized)) > 0.98f)
+            {
+                preferredUp = Mathf.Abs(Vector3.Dot(direction, Vector3.up)) < 0.98f
+                    ? Vector3.up
+                    : Vector3.right;
+            }
+
+            return Quaternion.LookRotation(direction, preferredUp);
         }
 
         private void ApplyWeaponTint(Transform weaponRoot, Color statusColor)
