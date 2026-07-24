@@ -125,7 +125,6 @@ namespace _Scripts.LHS.Radar
                 return;
             }
 
-            // 아이콘 이미지가 기본적으로 위쪽을 바라본다는 기준
             playerIcon.localEulerAngles = new Vector3(
                 0f,
                 0f,
@@ -141,10 +140,7 @@ namespace _Scripts.LHS.Radar
             bool completedFullRotation,
             float deltaTime)
         {
-            /*
-             * 월드 X/Z만 사용한다.
-             * Y 높이는 레이더 계산에 전혀 포함하지 않는다.
-             */
+
             Vector3 worldOffset =
                 target.transform.position - player.position;
 
@@ -169,20 +165,13 @@ namespace _Scripts.LHS.Radar
 
             state.View.SetPosition(radarPosition);
 
-            // 먼저 기존 아이콘을 서서히 투명하게 만든다.
             state.Alpha = Mathf.MoveTowards(
                 state.Alpha,
                 0f,
                 deltaTime / blipFadeDuration
             );
-
-            /*
-             * UI 기준:
-             * 위쪽 = 0도
-             * 오른쪽 = 90도
-             * 아래쪽 = 180도
-             * 왼쪽 = 270도
-             */
+            
+            
             float targetAngle = Mathf.Repeat(
                 Mathf.Atan2(
                     radarPosition.x,
@@ -226,14 +215,12 @@ namespace _Scripts.LHS.Radar
             currentAngle = Mathf.Repeat(currentAngle, 360f);
             targetAngle = Mathf.Repeat(targetAngle, 360f);
 
-            // 360도 경계를 넘지 않은 경우
             if (currentAngle >= previousAngle)
             {
                 return targetAngle > previousAngle &&
                        targetAngle <= currentAngle;
             }
 
-            // 359도 → 0도 경계를 넘어간 경우
             return targetAngle > previousAngle ||
                    targetAngle <= currentAngle;
         }
