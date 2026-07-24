@@ -167,7 +167,7 @@ MonoBehaviour:
     FieldOfView: 65
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 1000
+    FarClipPlane: 100000
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -6168,6 +6168,83 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1058829486562193885, guid: 622ca79c590152f468d3aae385a441f8, type: 3}
   m_PrefabInstance: {fileID: 101262291}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &280621256
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 782469264}
+    m_Modifications:
+    - target: {fileID: 1123243791319946, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_Name
+      value: Asteroids Belt (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 135.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 135.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 135.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -90.39023
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -67.374344
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 64.35317
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.4227486
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.8837526
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.18101689
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.08659053
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 45.714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 206.001
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -145.732
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 199626250971286202, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
 --- !u!1 &335763958
 GameObject:
   m_ObjectHideFlags: 0
@@ -6432,6 +6509,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 408305178}
+  - component: {fileID: 880000000000000002}
   m_Layer: 0
   m_Name: Medium
   m_TagString: Untagged
@@ -6458,6 +6536,25 @@ Transform:
   - {fileID: 1790754099}
   m_Father: {fileID: 948344957}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &880000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 408305177}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da125e9e1b895a64597abe31c6ea2ef8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.World.Zone
+  zoneType: 1
+  zoneBoxes:
+  - {fileID: 386680043}
+  - {fileID: 335763962}
+  - {fileID: 211564109}
+  - {fileID: 1790754102}
+  drawGizmo: 1
 --- !u!1 &559784093 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 487167030915152441, guid: 576e628f9fd33594cb9fcfa0e6053df3, type: 3}
@@ -6524,6 +6621,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 588518163}
+  - component: {fileID: 880000000000000003}
   m_Layer: 0
   m_Name: Hard
   m_TagString: Untagged
@@ -6550,6 +6648,25 @@ Transform:
   - {fileID: 829166739}
   m_Father: {fileID: 948344957}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &880000000000000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 588518162}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da125e9e1b895a64597abe31c6ea2ef8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.World.Zone
+  zoneType: 2
+  zoneBoxes:
+  - {fileID: 1913471305}
+  - {fileID: 1262858368}
+  - {fileID: 628982669}
+  - {fileID: 829166742}
+  drawGizmo: 1
 --- !u!1001 &614438302
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6564,15 +6681,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
       propertyPath: m_LocalScale.x
-      value: 38.063206
+      value: 135.1
       objectReference: {fileID: 0}
     - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
       propertyPath: m_LocalScale.y
-      value: 38.063206
+      value: 135.1
       objectReference: {fileID: 0}
     - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
       propertyPath: m_LocalScale.z
-      value: 38.0632
+      value: 135.1
       objectReference: {fileID: 0}
     - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6613,6 +6730,10 @@ PrefabInstance:
     - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 199626250971286202, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
       propertyPath: m_Materials.Array.size
@@ -7097,6 +7218,7 @@ Transform:
   - {fileID: 1383791142}
   - {fileID: 131128180}
   - {fileID: 1221664341}
+  - {fileID: 1005137981}
   - {fileID: 1584419059}
   - {fileID: 1922204448}
   m_Father: {fileID: 0}
@@ -7508,6 +7630,7 @@ MonoBehaviour:
   steerResponse: 4
   forwardAcceleration: 1.4
   forwardDeceleration: 0.9
+  throttleChangeRate: 0.5
   hideCursorOnEnable: 1
   cinemaCamera: {fileID: 2237378}
   boosterSettings: {fileID: 11400000, guid: 0b3f6e4f7d9a4d1e8c2b6a5f4e3d2c1b, type: 2}
@@ -7785,7 +7908,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 1000
+  far clip plane: 100000
   field of view: 65
   orthographic: 0
   orthographic size: 5
@@ -7914,6 +8037,11 @@ MonoBehaviour:
   nearFollowFactor: 0.82
   middleFollowFactor: 0.55
   farFollowFactor: 0.18
+--- !u!4 &1005137981 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4795756332844644, guid: c0aedbee0212d4ba08d6e85a65854d22, type: 3}
+  m_PrefabInstance: {fileID: 280621256}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1013319362
 GameObject:
   m_ObjectHideFlags: 0
@@ -9413,6 +9541,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1769007461}
+  - component: {fileID: 880000000000000004}
+  - component: {fileID: 880000000000000005}
   m_Layer: 0
   m_Name: System
   m_TagString: Untagged
@@ -9436,6 +9566,92 @@ Transform:
   - {fileID: 948344957}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &880000000000000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1769007460}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e1fd6d69c34eb0448494546347b5693, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.World.PlayerZoneTracker
+  playerTransform: {fileID: 7598115114843051577}
+  zones:
+  - {fileID: 880000000000000001}
+  - {fileID: 880000000000000002}
+  - {fileID: 880000000000000003}
+  checkInterval: 0.1
+--- !u!114 &880000000000000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1769007460}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b2b1d2c76ea4c4489c8ca02c4b4ae91, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.World.RuntimeZoneSpawner
+  sceneSpawnPolicy: 0
+  persistenceKey: StarFieldRuntimeZones
+  fillToLimitOnStart: 1
+  runtimeContainerName: RuntimeZoneSpawns
+  zoneRules:
+  - displayName: Normal Zone
+    zoneType: 0
+    zone: {fileID: 880000000000000001}
+    stonePrefabs: []
+    internalOreSOs: []
+    stoneLimit: 35
+    stoneRespawnBatchSize: 1
+    minimumStoneScale: 200
+    maximumStoneScale: 300
+    minePrefabs: []
+    mineLimit: 0
+    mineRespawnBatchSize: 1
+    minimumMineScale: 1
+    maximumMineScale: 1.5
+    respawnCooldownRange: {x: 10, y: 12}
+    minimumSpawnDistance: 50
+    maximumPlacementAttempts: 100
+  - displayName: Classified Zone
+    zoneType: 1
+    zone: {fileID: 880000000000000002}
+    stonePrefabs: []
+    internalOreSOs: []
+    stoneLimit: 25
+    stoneRespawnBatchSize: 1
+    minimumStoneScale: 150
+    maximumStoneScale: 250
+    minePrefabs: []
+    mineLimit: 25
+    mineRespawnBatchSize: 1
+    minimumMineScale: 1
+    maximumMineScale: 1.5
+    respawnCooldownRange: {x: 13, y: 16}
+    minimumSpawnDistance: 45
+    maximumPlacementAttempts: 100
+  - displayName: Top Secret Zone
+    zoneType: 2
+    zone: {fileID: 880000000000000003}
+    stonePrefabs: []
+    internalOreSOs: []
+    stoneLimit: 20
+    stoneRespawnBatchSize: 1
+    minimumStoneScale: 100
+    maximumStoneScale: 200
+    minePrefabs: []
+    mineLimit: 35
+    mineRespawnBatchSize: 1
+    minimumMineScale: 1
+    maximumMineScale: 1.5
+    respawnCooldownRange: {x: 17, y: 20}
+    minimumSpawnDistance: 40
+    maximumPlacementAttempts: 100
 --- !u!1001 &1777160926
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -14924,6 +15140,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2032466640}
+  - component: {fileID: 880000000000000001}
   m_Layer: 0
   m_Name: Easy
   m_TagString: Untagged
@@ -14950,6 +15167,25 @@ Transform:
   - {fileID: 1972727077}
   m_Father: {fileID: 948344957}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &880000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2032466639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da125e9e1b895a64597abe31c6ea2ef8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.World.Zone
+  zoneType: 0
+  zoneBoxes:
+  - {fileID: 663117658}
+  - {fileID: 243863148}
+  - {fileID: 2077709965}
+  - {fileID: 1972727080}
+  drawGizmo: 1
 --- !u!1001 &2059970373
 PrefabInstance:
   m_ObjectHideFlags: 0

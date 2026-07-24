@@ -179,13 +179,13 @@ namespace _Scripts.LSO.Data
                     ? Instantiate(mineralPrefab)
                     : GameObject.CreatePrimitive(PrimitiveType.Cube);
                 looseObject.name = usesMineralPrefab
-                    ? $"{oreSO.mineral.mineralName} One {i + 1}"
-                    : $"{name} One Cube {i + 1}";
+                    ? $"{oreSO.mineral.mineralName} Ore {i + 1}"
+                    : $"{name} Ore Cube {i + 1}";
                 looseObject.transform.SetPositionAndRotation(_pendingOrigin, Random.rotation);
                 looseObject.transform.localScale = usesMineralPrefab
                     ? Vector3.Scale(mineralPrefab.transform.localScale, _pendingChunkScale)
                     : Vector3.one * PlaceholderCubeScale;
-                looseObject.tag = "One";
+                looseObject.tag = "Ore";
                 looseObject.layer = _pendingLayer;
 
                 Renderer looseRenderer = looseObject.GetComponentInChildren<Renderer>(true);
