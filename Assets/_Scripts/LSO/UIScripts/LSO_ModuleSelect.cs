@@ -5,7 +5,7 @@ using UnityEngine;
 public class LSO_ModuleSelect : MonoBehaviour
 {
     public MiningTechType miningTechType;
-    private readonly string _startScene = "StarField";
+    private readonly string _startScene = "LSO_StarField";
 
     public void Select()
     {

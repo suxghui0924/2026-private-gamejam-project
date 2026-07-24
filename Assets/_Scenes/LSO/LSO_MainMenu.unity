@@ -469,7 +469,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &63035216
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4981,7 +4981,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.4117647}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.9411765}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -6252,10 +6252,10 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1688616410}
-  - {fileID: 1364089909}
   - {fileID: 544111809}
   - {fileID: 501331881}
   - {fileID: 1465999154}
+  - {fileID: 1364089909}
   m_Father: {fileID: 10916195473979700}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -9286,6 +9286,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   startScene: LSO_ModuleSelect
+  useLoadScene: 0
 --- !u!1 &2064333631
 GameObject:
   m_ObjectHideFlags: 0
