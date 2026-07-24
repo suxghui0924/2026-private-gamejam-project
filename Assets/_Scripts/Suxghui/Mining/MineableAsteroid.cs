@@ -53,8 +53,7 @@ namespace _Scripts.Suxghui.Mining
     public sealed class MineableAsteroid : MonoBehaviour
     {
         private const string StoneTag = "Stone";
-        private const string LooseMineralTag = "One";
-        private const string LegacyLooseMineralTag = "Ore";
+        private const string LooseMineralTag = "Ore";
 
         [Header("LSO Ore")]
         [SerializeField] private LSO_Ore oreSource;
@@ -446,7 +445,7 @@ namespace _Scripts.Suxghui.Mining
             for (Transform current = transform; current != null; current = current.parent)
             {
                 string objectTag = current.tag;
-                if (objectTag == LooseMineralTag || objectTag == LegacyLooseMineralTag)
+                if (objectTag == LooseMineralTag)
                     return MiningResourceType.LooseMineral;
                 if (objectTag == StoneTag)
                     return MiningResourceType.Stone;
