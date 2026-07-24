@@ -486,7 +486,7 @@ namespace _Scripts.Suxghui.Mining
         [SerializeField, Min(0.1f)] private float explosionVfxLifetime = 2.5f;
         [SerializeField, Min(0.01f)] private float explosionVfxScale = 1f;
         [SerializeField, Min(1)] private int maximumLooseMineralChunks = 5;
-        [SerializeField, Min(0.01f)] private float looseMineralScale = 0.18f;
+        [SerializeField, Min(0.01f)] private float looseMineralScale = 0.09f;
         [SerializeField, Min(0f)] private float looseScatterMinimumDistance = 0.15f;
         [SerializeField, Min(0f)] private float looseScatterMaximumDistance = 0.65f;
         [SerializeField, Min(0.05f)] private float looseScatterDuration = 0.35f;

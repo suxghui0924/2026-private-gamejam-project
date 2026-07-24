@@ -40,6 +40,7 @@ namespace _Scripts.Suxghui.Mining
         {
             collectible = true;
             ConfigureBody(true);
+            ApplyMineralMaterial();
         }
 
         public int Take(int maximumAmount)
@@ -118,9 +119,13 @@ namespace _Scripts.Suxghui.Mining
             {
                 Material[] materials = renderers[i].sharedMaterials;
                 if (materials.Length == 0)
+                {
+                    renderers[i].sharedMaterial = mineral.mineralMaterial;
                     continue;
+                }
 
-                materials[0] = mineral.mineralMaterial;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                    materials[materialIndex] = mineral.mineralMaterial;
                 renderers[i].sharedMaterials = materials;
             }
         }

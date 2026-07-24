@@ -5,7 +5,7 @@ namespace _Scripts.LSO.Data
 {
     public class LSO_Ore : MonoBehaviour, LSO_IMinerable
     {
-        private const float PlaceholderCubeScale = 0.12f;
+        private const float PlaceholderCubeScale = 0.06f;
 
         [Header("Loose Ore Size")]
         [SerializeField] private Vector2 looseOreRandomScaleRange = new Vector2(0.7f, 1.2f);
@@ -60,6 +60,13 @@ namespace _Scripts.LSO.Data
 
         private void ApplyMaterial()
         {
+            MineableAsteroid mineable = GetComponent<MineableAsteroid>();
+            if (mineable != null && mineable.IsLooseMineral)
+            {
+                ApplyLooseMineralMaterial();
+                return;
+            }
+
             if (_meshRenderer == null)
             {
                 Debug.LogWarning($"[LSO_Ore] '{name}' 및 자식에서 MeshRenderer를 찾지 못했습니다.", this);
@@ -76,6 +83,27 @@ namespace _Scripts.LSO.Data
 
             mats[0] = oreSO.oreMaterial;
             _meshRenderer.sharedMaterials = mats;
+        }
+
+        private void ApplyLooseMineralMaterial()
+        {
+            Material mineralMaterial = oreSO != null && oreSO.mineral != null
+                ? oreSO.mineral.mineralMaterial
+                : null;
+            if (mineralMaterial == null)
+            {
+                Debug.LogWarning($"[LSO_Ore] '{name}'의 Mineral SO에 원석 Material이 없습니다.", this);
+                return;
+            }
+
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                Material[] materials = renderers[rendererIndex].sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                    materials[materialIndex] = mineralMaterial;
+                renderers[rendererIndex].sharedMaterials = materials;
+            }
         }
 
         [ContextMenu("Mine")]
@@ -196,17 +224,24 @@ namespace _Scripts.LSO.Data
                 looseObject.tag = "Ore";
                 looseObject.layer = _pendingLayer;
 
-                Renderer looseRenderer = looseObject.GetComponentInChildren<Renderer>(true);
                 Material mineralMaterial = oreSO.mineral != null
                     ? oreSO.mineral.mineralMaterial
                     : null;
-                if (looseRenderer != null && mineralMaterial != null)
+                if (mineralMaterial != null)
                 {
-                    Material[] materials = looseRenderer.sharedMaterials;
-                    if (materials.Length > 0)
+                    Renderer[] looseRenderers = looseObject.GetComponentsInChildren<Renderer>(true);
+                    for (int rendererIndex = 0; rendererIndex < looseRenderers.Length; rendererIndex++)
                     {
-                        materials[0] = mineralMaterial;
-                        looseRenderer.sharedMaterials = materials;
+                        Material[] materials = looseRenderers[rendererIndex].sharedMaterials;
+                        if (materials.Length == 0)
+                        {
+                            looseRenderers[rendererIndex].sharedMaterial = mineralMaterial;
+                            continue;
+                        }
+
+                        for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                            materials[materialIndex] = mineralMaterial;
+                        looseRenderers[rendererIndex].sharedMaterials = materials;
                     }
                 }
 

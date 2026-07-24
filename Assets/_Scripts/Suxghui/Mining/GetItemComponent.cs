@@ -12,9 +12,9 @@ namespace _Scripts.Suxghui.Mining
     {
         [Header("Suction")]
         [SerializeField, Min(0.01f)] private float collectDistance = 1.2f;
-        [SerializeField, Min(0f)] private float minimumSuctionDuration = 0.4f;
-        [SerializeField, Min(0f)] private float suctionAcceleration = 8f;
-        [SerializeField, Min(0f)] private float maximumSuctionSpeed = 4f;
+        [SerializeField, Min(0f)] private float minimumSuctionDuration = 0.15f;
+        [SerializeField, Min(0f)] private float suctionAcceleration = 24f;
+        [SerializeField, Min(0f)] private float maximumSuctionSpeed = 12f;
 
         [Header("Inventory Compatibility")]
         [Tooltip("현재 LSO 인벤토리와 저장용 GameManager 인벤토리를 함께 동기화합니다.")]

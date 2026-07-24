@@ -95,7 +95,7 @@ namespace _Scripts.Suxghui.Mining
         private float _breakExplosionLifetime = 2.5f;
         private float _breakExplosionScale = 1f;
         private int _breakMaximumChunks = 5;
-        private float _breakLooseChunkScale = 0.18f;
+        private float _breakLooseChunkScale = 0.09f;
         private float _breakMinimumScatterDistance = 0.05f;
         private float _breakMaximumScatterDistance = 0.2f;
         private float _breakScatterDuration = 0.45f;

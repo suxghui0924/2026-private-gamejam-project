@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.LSO.Data.LSO_MineralSO
   mineralType: 5
   mineralName: "\uB8E8\uBE44"
-  mineralColor: {r: 0.92, g: 0.08, b: 0.16, a: 1}
+  mineralMaterial: {fileID: 2100000, guid: d8a1f0c25e184a9b98c4c045cb41a00e, type: 2}
   mineralDescription: "\uC120\uBA85\uD55C \uBE68\uAC04\uC0C9 \uBCF4\uC11D"
   mineralPrice: 150
   mineralRarity: 1

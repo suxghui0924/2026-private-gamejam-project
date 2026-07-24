@@ -7463,7 +7463,7 @@ MonoBehaviour:
   explosionVfxLifetime: 2.5
   explosionVfxScale: 1
   maximumLooseMineralChunks: 5
-  looseMineralScale: 0.18
+  looseMineralScale: 0.09
   looseScatterMinimumDistance: 0.15
   looseScatterMaximumDistance: 0.65
   looseScatterDuration: 0.35
@@ -20702,9 +20702,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.Mining.GetItemComponent
   collectDistance: 1.2
-  minimumSuctionDuration: 0.4
-  suctionAcceleration: 8
-  maximumSuctionSpeed: 4
+  minimumSuctionDuration: 0.15
+  suctionAcceleration: 24
+  maximumSuctionSpeed: 12
   synchronizePersistentInventory: 1
 --- !u!114 &880000000000000007
 MonoBehaviour:
