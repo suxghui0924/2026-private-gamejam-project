@@ -16077,7 +16077,7 @@ MonoBehaviour:
   defaultStoneMineral: {fileID: 11400000, guid: d11aa6f8e1204115b1d6bccf8739ea2e, type: 2}
   defaultScorchedMineral: {fileID: 11400000, guid: d22bf99ed66d4ba7a61abbf53eb2ae86, type: 2}
   drillRoot: {fileID: 2037275321380889117}
-  drillHead: {fileID: 0}
+  drillHead: {fileID: 2308982449556629639}
   drillChain:
     bones:
     - {fileID: 4652636834736443887}
