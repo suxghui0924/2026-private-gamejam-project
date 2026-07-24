@@ -1,5 +1,4 @@
 using _Scripts.Suxghui.Player;
-using Unity.Cinemachine;
 using UnityEngine;
 
 public class LSO_SpaceStation : MonoBehaviour
@@ -7,10 +6,7 @@ public class LSO_SpaceStation : MonoBehaviour
     public GameObject output;
     public GameObject input;
     public GameObject healSpot;
-
-    [SerializeField] private CinemachineCamera innerCam;
-    [SerializeField] private Canvas upgradeUI;
-    [SerializeField] private Canvas gameUI;
+    
 
     private bool _isDocked;
 
@@ -22,13 +18,13 @@ public class LSO_SpaceStation : MonoBehaviour
         {
             Debug.LogWarning("우주선에 헬스 컴포넌트가 없음");
             return;
-        }
+        } 
+        Heal(plane);
 
         _isDocked = true;
-        innerCam.Priority = 2;
         spaceAgent.HealthComponent.currentHeartbeat = false;
 
-        SetUI(false);
+        LoadingSceneController.LoadScene("LSO_UpGrade");
     }
 
     public void ToGameUI(GameObject plane)
@@ -43,8 +39,6 @@ public class LSO_SpaceStation : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
         }
 
-        innerCam.Priority = 0;                      // 원래 카메라로 복귀
-        SetUI(true);
         _isDocked = false;
     }
 
@@ -52,11 +46,5 @@ public class LSO_SpaceStation : MonoBehaviour
     {
         if (plane.TryGetComponent(out SpaceShipAgent spaceAgent))
             spaceAgent.HealthComponent.HealDamage(spaceAgent.HealthComponent.MAXHEALTH);
-    }
-
-    private void SetUI(bool isGame)
-    {
-        gameUI.gameObject.SetActive(isGame);
-        upgradeUI.gameObject.SetActive(!isGame);
     }
 }
