@@ -17,10 +17,15 @@ namespace _Scripts.LHS.SoundManager
         public AudioClip clip;
         [Range(0f, 1f)] public float volume = 1f;
         public bool looping;
+
+        [Header("Pitch")]
+        public float pitch = 1f;
+        public bool randomizePitch;
+        public Vector2 pitchRange = new Vector2(0.95f, 1.05f);
     }
 
-    [CreateAssetMenu(fileName = "SoundDataBaseSO", menuName = "Scriptable Objects/SoundDataBaseSO")]
-    public class SoundDataBaseSo : ScriptableObject
+    [CreateAssetMenu(fileName = "SoundDataBaseSO", menuName = "SO/SoundDataBaseSO")]
+    public class SoundDataBaseSO : ScriptableObject
     {
         public List<SoundInfo> sounds;
 
@@ -29,6 +34,13 @@ namespace _Scripts.LHS.SoundManager
         private void OnEnable()
         {
             _lookup = new Dictionary<string, SoundInfo>();
+
+            if (sounds == null)
+            {
+                sounds = new List<SoundInfo>();
+                return;
+            }
+
             foreach (var s in sounds)
             {
                 string key = MakeKey(s.type, s.soundID);
