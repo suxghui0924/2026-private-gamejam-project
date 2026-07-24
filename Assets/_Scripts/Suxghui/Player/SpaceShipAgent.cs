@@ -71,7 +71,7 @@ namespace _Scripts.Suxghui.Player
 
         private void Update()
         {
-            if (!HealthComponent.CurrentHeartbeat) return;
+            if (!HealthComponent.currentHeartbeat) return;
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
                 SetCursorLocked(false);
 

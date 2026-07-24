@@ -37,6 +37,13 @@ namespace _Scripts.Suxghui.Agent.Component
             else
                 currentHeartbeat = true;
         }
+        
+        public void SetHealthState(int currentHealth, int maxHealth)
+        {
+            MAXHEALTH = Mathf.Max(1, maxHealth);
+            health.Value = Mathf.Clamp(currentHealth, 0, MAXHEALTH);
+            CheckHeartBeat();
+        }
 
         private void Dead()
         {

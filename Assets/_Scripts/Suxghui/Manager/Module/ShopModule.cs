@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using _Scripts.LSO.Data;
 
 namespace _Scripts.Suxghui.Manager.Module
 {
@@ -6,8 +7,8 @@ namespace _Scripts.Suxghui.Manager.Module
     {
         private readonly WalletModule _wallet;
         private readonly InventoryModule _inventory;
-        private readonly Dictionary<string, int> _buyPrices = new Dictionary<string, int>();
-        private readonly Dictionary<string, int> _sellPrices = new Dictionary<string, int>();
+        private readonly Dictionary<LSO_MineralSO, int> _buyPrices = new Dictionary<LSO_MineralSO, int>();
+        private readonly Dictionary<LSO_MineralSO, int> _sellPrices = new Dictionary<LSO_MineralSO, int>();
 
         public ShopModule(WalletModule wallet, InventoryModule inventory)
         {
@@ -15,16 +16,16 @@ namespace _Scripts.Suxghui.Manager.Module
             _inventory = inventory;
         }
 
-        public void RegisterItem(string itemId, int buyPrice, int sellPrice)
+        public void RegisterItem(LSO_MineralSO itemId, int buyPrice, int sellPrice)
         {
-            if (string.IsNullOrWhiteSpace(itemId))
+            if (!itemId)
                 return;
 
             _buyPrices[itemId] = buyPrice < 0 ? 0 : buyPrice;
             _sellPrices[itemId] = sellPrice < 0 ? 0 : sellPrice;
         }
 
-        public bool TryBuy(string itemId, int amount = 1)
+        public bool TryBuy(LSO_MineralSO itemId, int amount = 1)
         {
             if (amount <= 0 || !_buyPrices.TryGetValue(itemId, out int price))
                 return false;
@@ -37,7 +38,7 @@ namespace _Scripts.Suxghui.Manager.Module
             return true;
         }
 
-        public bool TrySell(string itemId, int amount = 1)
+        public bool TrySell(LSO_MineralSO itemId, int amount = 1)
         {
             if (amount <= 0 || !_sellPrices.TryGetValue(itemId, out int price))
                 return false;

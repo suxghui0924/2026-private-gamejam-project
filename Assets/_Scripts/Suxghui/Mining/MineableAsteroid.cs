@@ -1,4 +1,5 @@
 using System;
+using _Scripts.LSO.Data;
 using _Scripts.Suxghui.Manager;
 using UnityEngine;
 
@@ -92,8 +93,8 @@ namespace _Scripts.Suxghui.Mining
                 ? RollStoneAmount(mineralAmount, stats.StoneRatio)
                 : 0;
 
-            AddToInventory(scorched ? scorchedMineralItemId : mineralItemId, mineralAmount);
-            AddToInventory(stoneItemId, stoneAmount);
+            /*AddToInventory(scorched ? scorchedMineralItemId : mineralItemId, mineralAmount);
+            AddToInventory(stoneItemId, stoneAmount);*/
 
             MiningResult result = new MiningResult(mineralAmount, stoneAmount, purity, scorched, MiningFailureReason.None);
             Mined?.Invoke(result);
@@ -125,9 +126,9 @@ namespace _Scripts.Suxghui.Mining
             return amount;
         }
 
-        private static void AddToInventory(string itemId, int amount)
+        private static void AddToInventory(LSO_MineralSO itemId, int amount)
         {
-            if (amount <= 0 || string.IsNullOrWhiteSpace(itemId))
+            if (amount <= 0 || !itemId)
                 return;
 
             GameManager.Instance.Inventory?.AddItem(itemId, amount);

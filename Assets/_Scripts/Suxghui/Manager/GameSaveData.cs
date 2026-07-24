@@ -1,14 +1,15 @@
 using System;
+using _Scripts.LSO.Data;
 
 namespace _Scripts.Suxghui.Manager
 {
     [Serializable]
     public struct InventoryItemSaveData
     {
-        public string itemId;
+        public LSO_MineralSO itemId;
         public int amount;
 
-        public InventoryItemSaveData(string itemId, int amount)
+        public InventoryItemSaveData(LSO_MineralSO itemId, int amount)
         {
             this.itemId = itemId;
             this.amount = amount;
