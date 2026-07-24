@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b483e887c9524935a55296f04d7aab82, type: 3}
+  m_Name: Weapon Holder
+  m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.Mining.WeaponHolderSO
+  drill: {fileID: 11400000, guid: 111af961b2e04a06acd1bcc8552563df, type: 2}
+  laser: {fileID: 11400000, guid: 222bf7f8f0cb4ab49fd7b3f67f995a46, type: 2}
+  extractor: {fileID: 11400000, guid: 333c6cd3b28a4033846cc3d988bb01b2, type: 2}
+  currentWeapon: {fileID: 11400000, guid: 111af961b2e04a06acd1bcc8552563df, type: 2}
+  drillLevel: 0
+  laserLevel: 0
+  extractorLevel: 0

@@ -1,0 +1,126 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a31da078ef364e12b79a1a1e23bbde10, type: 3}
+  m_Name: Extractor Tech
+  m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.Mining.MiningTechDefinitionSO
+  techId: extractor
+  displayName: Extractor Tongs
+  techType: 2
+  levels:
+  - upgradeCost: 0
+    damagePerAction: 48
+    actionsPerSecond: 5
+    range: 10
+    yieldMultiplier: 1
+    purityBonus: 0.12
+    stoneRatio: 0
+    scorchChance: 0
+    movementMultiplier: 1
+    extraExtractionChance: 0
+    deepExtractionChance: 0
+    guaranteedExtractionCount: 0
+    usesContinuousBeam: 0
+    canMineCoveredMineral: 0
+    canMineDeepMineral: 0
+    visualScaleMultiplier: 1
+    beamDamagePerTick: 0
+    beamTickInterval: 0.1
+  - upgradeCost: 700
+    damagePerAction: 55.2
+    actionsPerSecond: 5.75
+    range: 10
+    yieldMultiplier: 1.1
+    purityBonus: 0.12
+    stoneRatio: 0
+    scorchChance: 0
+    movementMultiplier: 1
+    extraExtractionChance: 0
+    deepExtractionChance: 0
+    guaranteedExtractionCount: 0
+    usesContinuousBeam: 0
+    canMineCoveredMineral: 0
+    canMineDeepMineral: 0
+    visualScaleMultiplier: 1
+    beamDamagePerTick: 0
+    beamTickInterval: 0.1
+  - upgradeCost: 1400
+    damagePerAction: 63.48
+    actionsPerSecond: 6.6125
+    range: 10
+    yieldMultiplier: 1.1
+    purityBonus: 0.2
+    stoneRatio: 0
+    scorchChance: 0
+    movementMultiplier: 1
+    extraExtractionChance: 0.1
+    deepExtractionChance: 0.12
+    guaranteedExtractionCount: 0
+    usesContinuousBeam: 0
+    canMineCoveredMineral: 0
+    canMineDeepMineral: 0
+    visualScaleMultiplier: 1
+    beamDamagePerTick: 0
+    beamTickInterval: 0.1
+  - upgradeCost: 2400
+    damagePerAction: 73.002
+    actionsPerSecond: 7.604375
+    range: 10
+    yieldMultiplier: 1.3
+    purityBonus: 0.2
+    stoneRatio: 0
+    scorchChance: 0
+    movementMultiplier: 1
+    extraExtractionChance: 0.2
+    deepExtractionChance: 0.25
+    guaranteedExtractionCount: 0
+    usesContinuousBeam: 0
+    canMineCoveredMineral: 0
+    canMineDeepMineral: 0
+    visualScaleMultiplier: 1
+    beamDamagePerTick: 0
+    beamTickInterval: 0.1
+  - upgradeCost: 4000
+    damagePerAction: 73.002
+    actionsPerSecond: 7.604375
+    range: 10
+    yieldMultiplier: 1.5
+    purityBonus: 0.2
+    stoneRatio: 0
+    scorchChance: 0
+    movementMultiplier: 1
+    extraExtractionChance: 0.2
+    deepExtractionChance: 0.4
+    guaranteedExtractionCount: 2
+    usesContinuousBeam: 0
+    canMineCoveredMineral: 0
+    canMineDeepMineral: 0
+    visualScaleMultiplier: 1
+    beamDamagePerTick: 0
+    beamTickInterval: 0.1
+  - upgradeCost: 6200
+    damagePerAction: 83.9523
+    actionsPerSecond: 8.745031
+    range: 10
+    yieldMultiplier: 1.7
+    purityBonus: 0.28
+    stoneRatio: 0
+    scorchChance: 0
+    movementMultiplier: 1
+    extraExtractionChance: 0.2
+    deepExtractionChance: 0.55
+    guaranteedExtractionCount: 2
+    usesContinuousBeam: 0
+    canMineCoveredMineral: 0
+    canMineDeepMineral: 0
+    visualScaleMultiplier: 1
+    beamDamagePerTick: 0
+    beamTickInterval: 0.1

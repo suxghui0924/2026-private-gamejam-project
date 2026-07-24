@@ -10,7 +10,7 @@ namespace _Scripts.LSO
         public static LSO_Weight Instance { get; private set; }
 
         [Header("무게")]
-        [SerializeField, Min(1)] private int maxWeight = 15;
+        [SerializeField, Min(1)] private int maxWeight = 20;
 
         [Tooltip("칸 하나가 나타내는 무게. 1이면 무게 1당 칸 하나.")]
         [SerializeField, Min(1)] private int weightPerBar = 1;
@@ -106,6 +106,14 @@ namespace _Scripts.LSO
         }
 
         public void ResetWeight() => SetWeight(0);
+
+        public void SetCapacity(int maximumWeight, int currentWeight)
+        {
+            maxWeight = Mathf.Max(1, maximumWeight);
+            Weight = Mathf.Clamp(currentWeight, 0, maxWeight);
+            SyncBars();
+            OnWeightChanged?.Invoke(Weight, maxWeight);
+        }
         
         public bool CanAdd(int amount) => amount <= RemainingCapacity;
         

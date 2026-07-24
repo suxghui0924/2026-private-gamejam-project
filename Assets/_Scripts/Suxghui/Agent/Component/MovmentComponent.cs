@@ -7,13 +7,14 @@ namespace _Scripts.Suxghui.Player.Agent
     {
         [field: SerializeField] public Rigidbody RigidBody { get; private set; }
         [field: SerializeField] public Transform MoveTarget { get; private set; }
-        [field: SerializeField, Min(0f)] public float MoveSpeed { get; private set; } = 8f;
+        [field: SerializeField, Min(0f)] public float MoveSpeed { get; private set; } = 10f;
         [field: SerializeField, Min(0f)] public float VerticalSpeed { get; private set; } = 6f;
         [field: SerializeField] public AnimationCurve MovementCurve { get; private set; } =
             AnimationCurve.Linear(0f, 0f, 1f, 1f);
         [field: SerializeField] public bool IsMovementBlock { get; private set; }
         public Vector3 CurrentVelocity { get; private set; }
         public float CurrentSpeed => CurrentVelocity.magnitude;
+        public float ExternalSpeedMultiplier { get; private set; } = 1f;
 
         private void Awake()
         {
@@ -40,6 +41,11 @@ namespace _Scripts.Suxghui.Player.Agent
 
         public void Move(Vector3 direction, float speedMultiplier)
         {
+            Move(direction, speedMultiplier, Time.fixedDeltaTime);
+        }
+
+        public void Move(Vector3 direction, float speedMultiplier, float deltaTime)
+        {
             if (IsMovementBlock)
                 return;
 
@@ -48,9 +54,9 @@ namespace _Scripts.Suxghui.Player.Agent
                 ApplyCurve(direction.y),
                 ApplyCurve(direction.z));
             Vector3 velocity = new Vector3(
-                curvedDirection.x * MoveSpeed * speedMultiplier,
-                curvedDirection.y * VerticalSpeed * speedMultiplier,
-                curvedDirection.z * MoveSpeed * speedMultiplier);
+                curvedDirection.x * MoveSpeed * speedMultiplier * ExternalSpeedMultiplier,
+                curvedDirection.y * VerticalSpeed * speedMultiplier * ExternalSpeedMultiplier,
+                curvedDirection.z * MoveSpeed * speedMultiplier * ExternalSpeedMultiplier);
             CurrentVelocity = velocity;
 
             if (RigidBody != null && RigidBody.transform == MoveTarget && !RigidBody.isKinematic)
@@ -60,7 +66,7 @@ namespace _Scripts.Suxghui.Player.Agent
             }
 
             if (MoveTarget != null)
-                MoveTarget.position += velocity * Time.fixedDeltaTime;
+                MoveTarget.position += velocity * deltaTime;
         }
 
         public void Stop()
@@ -75,6 +81,18 @@ namespace _Scripts.Suxghui.Player.Agent
 
             if (IsMovementBlock)
                 Stop();
+        }
+
+        public void SetExternalSpeedMultiplier(float multiplier)
+        {
+            ExternalSpeedMultiplier = Mathf.Clamp(multiplier, 0.1f, 2f);
+        }
+
+        public void SetBaseMoveSpeed(float moveSpeed)
+        {
+            float verticalRatio = MoveSpeed > 0.001f ? VerticalSpeed / MoveSpeed : 0.75f;
+            MoveSpeed = Mathf.Max(0f, moveSpeed);
+            VerticalSpeed = MoveSpeed * Mathf.Max(0f, verticalRatio);
         }
 
         private void TryCacheRigidbody()
