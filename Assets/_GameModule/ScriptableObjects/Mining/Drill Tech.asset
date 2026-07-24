@@ -17,7 +17,7 @@ MonoBehaviour:
   techType: 0
   levels:
   - upgradeCost: 0
-    damagePerAction: 34
+    damagePerAction: 12
     actionsPerSecond: 4
     range: 14
     targetingRange: 28
