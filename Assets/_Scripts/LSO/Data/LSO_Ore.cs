@@ -7,6 +7,9 @@ namespace _Scripts.LSO.Data
     {
         private const float PlaceholderCubeScale = 0.12f;
 
+        [Header("Loose Ore Size")]
+        [SerializeField] private Vector2 looseOreRandomScaleRange = new Vector2(0.7f, 1.2f);
+
         public LSO_OreSO oreSO;
 
         private MeshRenderer _meshRenderer;
@@ -24,8 +27,14 @@ namespace _Scripts.LSO.Data
         private float _pendingMaximumScatterDistance;
         private float _pendingScatterDuration;
         private int _pendingLayer;
+        private GameObject[] _worldOreTemplates;
 
         public bool BreakFeedbackPlayedLastMine { get; private set; }
+
+        public void SetWorldOreTemplates(GameObject[] templates)
+        {
+            _worldOreTemplates = templates;
+        }
 
         private void Awake()
         {
@@ -171,26 +180,35 @@ namespace _Scripts.LSO.Data
             {
                 int representedAmount = _pendingMineralAmount / chunkCount +
                                         (i < _pendingMineralAmount % chunkCount ? 1 : 0);
-                GameObject mineralPrefab = oreSO.mineral != null
-                    ? oreSO.mineral.mineralPrefab
-                    : null;
-                bool usesMineralPrefab = mineralPrefab != null;
-                GameObject looseObject = usesMineralPrefab
-                    ? Instantiate(mineralPrefab)
-                    : GameObject.CreatePrimitive(PrimitiveType.Cube);
-                looseObject.name = usesMineralPrefab
-                    ? $"{oreSO.mineral.mineralName} One {i + 1}"
-                    : $"{name} One Cube {i + 1}";
+                GameObject template = PickWorldOreTemplate();
+                GameObject looseObject = template != null
+                    ? Instantiate(template)
+                    : GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                looseObject.SetActive(true);
+                looseObject.name = $"{oreSO.mineral.mineralName} Ore {i + 1}";
                 looseObject.transform.SetPositionAndRotation(_pendingOrigin, Random.rotation);
-                looseObject.transform.localScale = usesMineralPrefab
-                    ? Vector3.Scale(mineralPrefab.transform.localScale, _pendingChunkScale)
-                    : Vector3.one * PlaceholderCubeScale;
-                looseObject.tag = "One";
+                float randomScale = Random.Range(
+                    Mathf.Min(looseOreRandomScaleRange.x, looseOreRandomScaleRange.y),
+                    Mathf.Max(looseOreRandomScaleRange.x, looseOreRandomScaleRange.y));
+                looseObject.transform.localScale = template != null
+                    ? _pendingChunkScale * Mathf.Max(0.05f, randomScale)
+                    : Vector3.one * PlaceholderCubeScale * Mathf.Max(0.05f, randomScale);
+                looseObject.tag = "Ore";
                 looseObject.layer = _pendingLayer;
 
                 Renderer looseRenderer = looseObject.GetComponentInChildren<Renderer>(true);
-                if (!usesMineralPrefab && looseRenderer != null && oreSO.oreMaterial != null)
-                    looseRenderer.sharedMaterial = oreSO.oreMaterial;
+                Material mineralMaterial = oreSO.mineral != null
+                    ? oreSO.mineral.mineralMaterial
+                    : null;
+                if (looseRenderer != null && mineralMaterial != null)
+                {
+                    Material[] materials = looseRenderer.sharedMaterials;
+                    if (materials.Length > 0)
+                    {
+                        materials[0] = mineralMaterial;
+                        looseRenderer.sharedMaterials = materials;
+                    }
+                }
 
                 if (looseObject.GetComponentInChildren<Collider>(true) == null)
                     looseObject.AddComponent<BoxCollider>();
@@ -215,6 +233,31 @@ namespace _Scripts.LSO.Data
             }
 
             return chunkCount;
+        }
+
+        private GameObject PickWorldOreTemplate()
+        {
+            if (_worldOreTemplates == null || _worldOreTemplates.Length == 0)
+                return null;
+
+            int validCount = 0;
+            for (int i = 0; i < _worldOreTemplates.Length; i++)
+                if (_worldOreTemplates[i] != null)
+                    validCount++;
+
+            if (validCount == 0)
+                return null;
+
+            int selected = Random.Range(0, validCount);
+            for (int i = 0; i < _worldOreTemplates.Length; i++)
+            {
+                if (_worldOreTemplates[i] == null)
+                    continue;
+                if (selected-- == 0)
+                    return _worldOreTemplates[i];
+            }
+
+            return null;
         }
 
 #if UNITY_EDITOR

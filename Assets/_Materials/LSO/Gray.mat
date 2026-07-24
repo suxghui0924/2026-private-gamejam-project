@@ -259,7 +259,7 @@ Material:
     - _Hue: 0
     - _IndirectFade: 1
     - _Initialized: 0
-    - _InputTab: 1
+    - _InputTab: 0
     - _Iridescence: 0
     - _IridescenceSize: 1
     - _IridescenceSmoothness: 0.5
@@ -277,7 +277,7 @@ Material:
     - _NormalMapIntensity: 1
     - _OcclusionMapIntensity: 1
     - _OcclusionStrength: 1
-    - _OptionsTab: 1
+    - _OptionsTab: 0
     - _Outline: 3
     - _OutlineClipOffset: 0
     - _OutlineConstantSize: 0
