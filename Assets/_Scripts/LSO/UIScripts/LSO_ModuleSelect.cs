@@ -5,6 +5,11 @@ using UnityEngine;
 public class LSO_ModuleSelect : MonoBehaviour
 {
     public MiningTechType miningTechType;
-    
-    //private string Tech = GameManager.Instance.T
+    private readonly string _startScene = "StarField";
+
+    public void Select()
+    {
+        GameManager.Instance.TechSelection.Select(miningTechType);
+        LoadingSceneController.LoadScene(_startScene);
+    }
 }
