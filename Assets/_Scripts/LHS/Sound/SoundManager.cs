@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace _Scripts.LHS.SoundManager
 {
@@ -29,42 +30,110 @@ namespace _Scripts.LHS.SoundManager
 
         private string MakeKey(SoundType type, string ID) => $"{type}_{ID}";
 
-        public void Play(SoundType type, string ID)
+        public void Play(SoundType type, string id)
+{
+    if (database == null)
+    {
+        Debug.LogError("[SoundManager] SoundDataBaseSO가 할당되지 않았습니다.", this);
+        return;
+    }
+
+    if (string.IsNullOrWhiteSpace(id))
+    {
+        Debug.LogError("[SoundManager] Sound ID가 비어 있습니다.", this);
+        return;
+    }
+
+    var info = database.GetSound(type, id);
+
+    if (info == null)
+    {
+        Debug.LogError(
+            $"[SoundManager] 사운드를 찾지 못했습니다. Type: {type}, ID: {id}",
+            database);
+        return;
+    }
+
+    if (info.audioSourcePrefab == null)
+    {
+        Debug.LogError(
+            $"[SoundManager] AudioSource 프리팹이 없습니다. Type: {type}, ID: {id}",
+            database);
+        return;
+    }
+
+    if (info.clip == null)
+    {
+        Debug.LogError(
+            $"[SoundManager] AudioClip이 없습니다. Type: {type}, ID: {id}",
+            database);
+        return;
+    }
+
+    string key = MakeKey(type, id);
+
+    if (info.looping)
+    {
+        if (type == SoundType.BGM &&
+            !string.IsNullOrEmpty(_currentBGMKey) &&
+            _currentBGMKey != key)
         {
-            var info = database.GetSound(type, ID);
-            if (info == null || info.audioSourcePrefab == null || info.clip == null) return;
-
-            string key = MakeKey(type, ID);
-
-            if (info.looping)
-            {
-                if (type == SoundType.BGM && _currentBGMKey != null && _currentBGMKey != key)
-                    StopByKey(_currentBGMKey);
-
-                if (type == SoundType.BGM)
-                    _currentBGMKey = key;
-
-                if (_activeSources.ContainsKey(key))
-                    StopByKey(key);
-            }
-
-            AudioSource source = GetFromPool(info.audioSourcePrefab);
-            source.clip = info.clip;
-            source.volume = info.volume;
-            source.loop = info.looping;
-            source.pitch = info.randomizePitch
-                ? Random.Range(info.pitchRange.x, info.pitchRange.y)
-                : info.pitch;
-            source.Play();
-
-            _activeSources[key] = source;
-
-            if (!info.looping)
-            {
-                var co = StartCoroutine(ReturnAfterPlay(key, source, info.clip.length));
-                _returnCoroutines[key] = co;
-            }
+            StopByKey(_currentBGMKey);
         }
+
+        if (_activeSources.ContainsKey(key))
+        {
+            StopByKey(key);
+        }
+
+        if (type == SoundType.BGM)
+        {
+            _currentBGMKey = key;
+        }
+    }
+
+    AudioSource source = GetFromPool(info.audioSourcePrefab);
+
+    source.gameObject.SetActive(true);
+    source.enabled = true;
+    source.clip = info.clip;
+    source.volume = info.volume;
+    source.loop = info.looping;
+    source.pitch = info.randomizePitch
+        ? Random.Range(info.pitchRange.x, info.pitchRange.y)
+        : info.pitch;
+
+    if (type == SoundType.BGM)
+    {
+        source.spatialBlend = 0f;
+    }
+    AudioMixerGroup outputGroup = source.outputAudioMixerGroup;
+
+    Debug.Log(
+        outputGroup == null
+            ? "[SoundManager] MixerGroup: None"
+            : $"[SoundManager] MixerGroup: {outputGroup.name}, " +
+              $"Mixer: {outputGroup.audioMixer.name}"
+    );
+    source.Play();
+
+    _activeSources[key] = source;
+
+    Debug.Log(
+        $"[SoundManager] 재생 요청 완료 | " +
+        $"Type: {type}, ID: {id}, Clip: {source.clip.name}, " +
+        $"Volume: {source.volume}, IsPlaying: {source.isPlaying}");
+
+    if (!info.looping)
+    {
+        float duration = info.clip.length / Mathf.Max(Mathf.Abs(source.pitch), 0.01f);
+
+        Coroutine coroutine = StartCoroutine(
+            ReturnAfterPlay(key, source, duration));
+
+        _returnCoroutines[key] = coroutine;
+    }
+}
 
         public void Stop(SoundType type, string ID)
         {
