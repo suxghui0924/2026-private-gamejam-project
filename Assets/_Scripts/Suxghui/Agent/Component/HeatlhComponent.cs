@@ -9,9 +9,9 @@ namespace _Scripts.Suxghui.Agent.Component
         public NotifyValue<int> health = new NotifyValue<int>(0);
         public event Action<bool> OnDeadInvoke;
 
-        public bool CurrentHeartbeat { get; private set; } = true;
-        
-        [SerializeField] private int MAXHEALTH = 0;
+        public bool currentHeartbeat = true;
+
+        public int MAXHEALTH { get; private set; } = 100;
 
         private void Awake()
         {
@@ -35,13 +35,13 @@ namespace _Scripts.Suxghui.Agent.Component
             if (health.Value <= 0)
                 Dead();
             else
-                CurrentHeartbeat = true;
+                currentHeartbeat = true;
         }
 
         private void Dead()
         {
             OnDeadInvoke?.Invoke(true);
-            CurrentHeartbeat = false;
+            currentHeartbeat = false;
         }
     }
 }

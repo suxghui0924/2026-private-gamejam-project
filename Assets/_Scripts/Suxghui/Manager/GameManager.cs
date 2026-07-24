@@ -15,6 +15,7 @@ namespace _Scripts.Suxghui.Manager
         public WalletModule Wallet { get; private set; }
         public InventoryModule Inventory { get; private set; }
         public ShopModule Shop { get; private set; }
+        public LSO_ScreenFader ScreenFader { get; private set; }
         public string SavePath => Path.Combine(Application.persistentDataPath, SaveFileName);
 
         protected override void Awake()
