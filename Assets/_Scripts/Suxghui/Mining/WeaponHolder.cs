@@ -413,6 +413,7 @@ namespace _Scripts.Suxghui.Mining
         [SerializeField, Range(0.5f, 1f)] private float drillMinimumStretch = 1f;
         [SerializeField, Range(1f, 20f)] private float drillMaximumStretch = 12f;
         [SerializeField, Min(0f)] private float drillSurfaceOffset;
+        [SerializeField, Min(0.01f)] private float drillContactTolerance = 0.35f;
         [SerializeField, Range(0.01f, 1f)] private float drillEffectScale = 0.16f;
         [SerializeField, Min(0f)] private float drillEffectSurfaceOffset = 0.01f;
         [SerializeField, Range(0f, 1f)] private float drillEffectBrightness = 0.2f;
@@ -453,12 +454,16 @@ namespace _Scripts.Suxghui.Mining
         [SerializeField, Min(0.01f)] private float explosionVfxScale = 1f;
         [SerializeField, Min(1)] private int maximumLooseMineralChunks = 5;
         [SerializeField, Min(0.01f)] private float looseMineralScale = 0.18f;
-        [SerializeField, Min(0f)] private float looseScatterMinimumDistance = 0.05f;
-        [SerializeField, Min(0f)] private float looseScatterMaximumDistance = 0.2f;
-        [SerializeField, Min(0.05f)] private float looseScatterDuration = 0.45f;
+        [SerializeField, Min(0f)] private float looseScatterMinimumDistance = 0.15f;
+        [SerializeField, Min(0f)] private float looseScatterMaximumDistance = 0.65f;
+        [SerializeField, Min(0.05f)] private float looseScatterDuration = 0.35f;
         [SerializeField, Min(0f)] private float extractorPullMinimumDistance = 0.05f;
         [SerializeField, Min(0f)] private float extractorPullMaximumDistance = 0.2f;
         [SerializeField, Min(0.05f)] private float extractorPullDuration = 0.3f;
+        [SerializeField] private GameObject laserImpactVfxPrefab;
+        [SerializeField] private GameObject[] oreReleaseVfxPrefabs = Array.Empty<GameObject>();
+        [SerializeField, Min(0.1f)] private float oreReleaseVfxLifetime = 2.5f;
+        [SerializeField, Min(0.01f)] private float oreReleaseVfxScale = 1f;
 
         [Header("Camera Impulse")]
         [SerializeField] private CinemachineImpulseSource laserImpulseSource;
@@ -488,10 +493,13 @@ namespace _Scripts.Suxghui.Mining
         private bool _targetCanMine;
         private bool _drillEffectsPlaying;
         private bool _laserEffectsPlaying;
+        private bool _laserImpactEffectsPlaying;
         private bool _upgradeModulesSubscribed;
         private GameManager _upgradeManager;
         private MiningTechSelectionModule _techSelectionModule;
         private Transform _laserVfxRoot;
+        private GameObject _laserImpactVfxInstance;
+        private ParticleSystem[] _laserImpactEffects = Array.Empty<ParticleSystem>();
         private Vector3[] _extractorJawRootOffsetsAtBoomEnd = Array.Empty<Vector3>();
         private Quaternion[] _extractorJawAnchorRotationOffsets = Array.Empty<Quaternion>();
         private bool _extractorRigCaptured;
@@ -643,6 +651,8 @@ namespace _Scripts.Suxghui.Mining
         {
             UnsubscribeTechSelection();
             UnsubscribeUpgradeModules();
+            if (_laserImpactVfxInstance != null)
+                Destroy(_laserImpactVfxInstance);
         }
 
         public void SelectTech(MiningTechType type)
@@ -803,6 +813,8 @@ namespace _Scripts.Suxghui.Mining
         private void UpdateCloseRangeMining(MiningTechType type)
         {
             bool canUse = _fireHeld && _targetCanMine && crossHair != null && crossHair.TargetCollider != null;
+            if (type == MiningTechType.Drill && canUse && !IsDrillTipTouchingTarget())
+                return;
             if (!canUse || _actionTimer > 0f)
                 return;
 
@@ -832,6 +844,7 @@ namespace _Scripts.Suxghui.Mining
                             extractorPullMaximumDistance,
                             extractorPullDuration))
                     {
+                        SpawnOreReleaseVfx(target.WorldCenter);
                         GenerateMiningImpulse(type, true);
                     }
                 }
@@ -902,7 +915,22 @@ namespace _Scripts.Suxghui.Mining
                     drillMaximumStretch,
                     reachWeight);
                 drillChain.StraightenToward(targetPoint, reachWeight);
+                drillChain.Solve(targetPoint, reachWeight);
             }
+        }
+
+        private bool IsDrillTipTouchingTarget()
+        {
+            if (!drillChain.IsValid || crossHair == null || crossHair.TargetCollider == null)
+                return false;
+
+            Vector3 tipPosition = drillChain.EndPosition;
+            Vector3 closestSurfacePoint = crossHair.TargetCollider.ClosestPoint(tipPosition);
+            float scaleAwareTolerance = drillContactTolerance * Mathf.Max(
+                1f,
+                drillRoot != null ? drillRoot.lossyScale.magnitude : 1f);
+            return Vector3.SqrMagnitude(tipPosition - closestSurfacePoint) <=
+                   scaleAwareTolerance * scaleAwareTolerance;
         }
 
         private void UpdateDrillEffects()
@@ -1158,6 +1186,7 @@ namespace _Scripts.Suxghui.Mining
             GameObject explosionPrefab = asteroidExplosionVfxPrefab != null
                 ? asteroidExplosionVfxPrefab
                 : holderState != null ? holderState.ExplosionEffectPrefab : null;
+            SpawnOreReleaseVfx(target.WorldCenter);
             target.BreakIntoLooseMinerals(
                 explosionPrefab,
                 explosionVfxLifetime,
@@ -1494,7 +1523,20 @@ namespace _Scripts.Suxghui.Mining
                 line.numCapVertices = Mathf.Max(2, line.numCapVertices);
             }
 
+            EnsureLaserImpactVfx();
             SetBeamVisible(false, true);
+        }
+
+        private void EnsureLaserImpactVfx()
+        {
+            if (_laserImpactVfxInstance != null || laserImpactVfxPrefab == null)
+                return;
+
+            Transform parent = laserRoot != null ? laserRoot : transform;
+            _laserImpactVfxInstance = Instantiate(laserImpactVfxPrefab, parent);
+            _laserImpactVfxInstance.name = "Laser Impact DrillVFX";
+            _laserImpactEffects = _laserImpactVfxInstance.GetComponentsInChildren<ParticleSystem>(true);
+            _laserImpactVfxInstance.SetActive(false);
         }
 
         private void UpdateBeamPositions()
@@ -1544,6 +1586,42 @@ namespace _Scripts.Suxghui.Mining
                 laserEndPosition.SetPositionAndRotation(
                     end,
                     CreateBeamRotation(-beamDirection, up));
+
+            bool showImpact = _currentType == MiningTechType.Laser &&
+                              _fireHeld && crossHair.HasTarget;
+            UpdateLaserImpactVfx(
+                showImpact,
+                end,
+                CreateBeamRotation(-beamDirection, up));
+        }
+
+        private void UpdateLaserImpactVfx(bool visible, Vector3 position, Quaternion rotation)
+        {
+            EnsureLaserImpactVfx();
+            if (_laserImpactVfxInstance == null)
+                return;
+
+            if (!visible)
+            {
+                if (_laserImpactEffectsPlaying)
+                    SetParticleSystemsPlaying(_laserImpactEffects, false);
+                _laserImpactEffectsPlaying = false;
+                _laserImpactVfxInstance.SetActive(false);
+                return;
+            }
+
+            _laserImpactVfxInstance.transform.SetPositionAndRotation(position, rotation);
+            if (!_laserImpactVfxInstance.activeSelf)
+                _laserImpactVfxInstance.SetActive(true);
+
+            if (_laserImpactEffectsPlaying)
+            {
+                RestartCompletedEffects(_laserImpactEffects);
+                return;
+            }
+
+            _laserImpactEffectsPlaying = true;
+            SetParticleSystemsPlaying(_laserImpactEffects, true);
         }
 
         private static float ProjectBoundsExtent(Vector3 extents, Vector3 direction)
@@ -1585,6 +1663,7 @@ namespace _Scripts.Suxghui.Mining
             {
                 _laserEffectsPlaying = false;
                 SetParticleSystemsPlaying(laserEffects, false);
+                UpdateLaserImpactVfx(false, Vector3.zero, Quaternion.identity);
                 return;
             }
 
@@ -1596,6 +1675,31 @@ namespace _Scripts.Suxghui.Mining
 
             _laserEffectsPlaying = true;
             SetParticleSystemsPlaying(laserEffects, true);
+        }
+
+        private void SpawnOreReleaseVfx(Vector3 position)
+        {
+            if (oreReleaseVfxPrefabs == null)
+                return;
+
+            for (int i = 0; i < oreReleaseVfxPrefabs.Length; i++)
+            {
+                GameObject prefab = oreReleaseVfxPrefabs[i];
+                if (prefab == null)
+                    continue;
+
+                GameObject effect = Instantiate(prefab, position, UnityEngine.Random.rotation);
+                effect.transform.localScale *= oreReleaseVfxScale;
+                ParticleSystem[] particles = effect.GetComponentsInChildren<ParticleSystem>(true);
+                for (int j = 0; j < particles.Length; j++)
+                {
+                    particles[j].gameObject.SetActive(true);
+                    particles[j].Clear(true);
+                    particles[j].Play(true);
+                }
+
+                Destroy(effect, oreReleaseVfxLifetime);
+            }
         }
 
         private void SetDrillEffectsPlaying(bool visible, bool force = false)

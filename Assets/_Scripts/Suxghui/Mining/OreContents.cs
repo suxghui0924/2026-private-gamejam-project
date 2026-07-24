@@ -104,6 +104,44 @@ namespace _Scripts.Suxghui.Mining
             return item.mineral;
         }
 
+        public bool MarkExternalOreExtracted(Transform anchor)
+        {
+            if (anchor == null)
+                return false;
+
+            for (int i = 0; i < externalOres.Count; i++)
+            {
+                ExternalRawOre item = externalOres[i];
+                if (item == null || item.isExtracted || item.anchor != anchor)
+                    continue;
+
+                item.isExtracted = true;
+                ExternalOresChanged?.Invoke();
+                return true;
+            }
+
+            return false;
+        }
+
+        public void RemoveRemainingExternalOres()
+        {
+            bool changed = false;
+            for (int i = 0; i < externalOres.Count; i++)
+            {
+                ExternalRawOre item = externalOres[i];
+                if (item == null || item.isExtracted)
+                    continue;
+
+                item.isExtracted = true;
+                if (item.anchor != null)
+                    Destroy(item.anchor.gameObject);
+                changed = true;
+            }
+
+            if (changed)
+                ExternalOresChanged?.Invoke();
+        }
+
         public string GetContentSummary()
         {
             var summary = new StringBuilder();

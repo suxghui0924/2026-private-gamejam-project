@@ -1,5 +1,4 @@
 using System;
-using _Scripts.LSO;
 using _Scripts.LSO.Data;
 using UnityEngine;
 
@@ -57,6 +56,7 @@ namespace _Scripts.Suxghui.Mining
 
         [Header("LSO Ore")]
         [SerializeField] private LSO_Ore oreSource;
+        [SerializeField] private LSO_MineralSO looseMineralOverride;
         [SerializeField] private LSO_MineralSO scorchedMineralOverride;
         [SerializeField] private LSO_MineralSO stoneMineral;
 
@@ -90,8 +90,7 @@ namespace _Scripts.Suxghui.Mining
         private float _loosePurity = -1f;
         private bool _looseScorched;
         private Rigidbody _rigidbody;
-        private LSO_PlayerInventory _inventory;
-        private LSO_Weight _cargoWeight;
+        private MineralPickup _mineralPickup;
         private GameObject _breakExplosionPrefab;
         private float _breakExplosionLifetime = 2.5f;
         private float _breakExplosionScale = 1f;
@@ -222,7 +221,9 @@ namespace _Scripts.Suxghui.Mining
                     gameObject.layer);
             }
 
-            LSO_MineralSO minedMineral = oreSource.Mine();
+            LSO_MineralSO minedMineral = ResourceType == MiningResourceType.Stone
+                ? oreSource.Mine()
+                : ResolveLooseMineral();
             if (minedMineral == null)
                 return FailedResult(MiningFailureReason.MissingOreData);
 
@@ -252,6 +253,7 @@ namespace _Scripts.Suxghui.Mining
                 return;
 
             _isBreaking = true;
+            GetComponent<OreContents>()?.RemoveRemainingExternalOres();
             if (oreSource != null && !oreSource.BreakFeedbackPlayedLastMine)
             {
                 float averagePurity = _pendingPuritySamples > 0
@@ -289,11 +291,9 @@ namespace _Scripts.Suxghui.Mining
                 return false;
 
             _isBeingExtracted = true;
-            foreach (Collider targetCollider in GetComponentsInChildren<Collider>(true))
-                targetCollider.enabled = false;
-
+            OreContents contents = GetComponentInParent<OreContents>();
+            contents?.MarkExternalOreExtracted(transform);
             LaunchInSpace(pullDirection, minimumDistance, maximumDistance, travelDuration);
-            Destroy(gameObject, Mathf.Max(0.1f, travelDuration));
             return true;
         }
 
@@ -330,24 +330,11 @@ namespace _Scripts.Suxghui.Mining
             float purity,
             bool scorched)
         {
-            if (!TryResolveInventory())
-                return FailedResult(MiningFailureReason.InventoryUnavailable);
-
-            int availableCapacity = _cargoWeight != null
-                ? _cargoWeight.RemainingCapacity
-                : int.MaxValue;
-            int mineralAmount = Mathf.Min(mineralReserve, requestedAmount, availableCapacity);
-            if (mineralAmount <= 0)
-            {
-                _miningProgress = Mathf.Min(_miningProgress, durabilityPerDrop);
-                return FailedResult(MiningFailureReason.StorageFull);
-            }
-
+            int mineralAmount = Mathf.Min(mineralReserve, requestedAmount);
             LSO_MineralSO storedMineral = scorched && scorchedMineralOverride != null
                 ? scorchedMineralOverride
                 : minedMineral;
-            _inventory.AddItem(storedMineral, mineralAmount);
-            _cargoWeight?.AddWeight(mineralAmount);
+            EnsureMineralPickup().Initialize(storedMineral, mineralAmount, false);
             mineralReserve -= mineralAmount;
             _miningProgress -= completedDrops * durabilityPerDrop;
 
@@ -384,6 +371,31 @@ namespace _Scripts.Suxghui.Mining
             if (oreSource == null)
                 oreSource = gameObject.AddComponent<LSO_Ore>();
             oreSource.oreSO = oreDefinition;
+            looseMineralOverride = oreDefinition != null ? oreDefinition.mineral : null;
+            EnsureMineralPickup().Initialize(looseMineralOverride, mineralReserve, false);
+            CacheReferences();
+        }
+
+        public void InitializeAsLooseMineral(
+            LSO_MineralSO mineral,
+            int representedAmount,
+            float purity = 1f,
+            bool scorched = false)
+        {
+            _hasRuntimeResourceType = true;
+            _runtimeResourceType = MiningResourceType.LooseMineral;
+            _isBreaking = false;
+            _isBeingExtracted = false;
+            _miningProgress = 0f;
+            _pendingLooseMinerals = 0;
+            mineralReserve = Mathf.Max(1, representedAmount);
+            stoneCovered = false;
+            exposedMineral = true;
+            deepMineral = false;
+            _loosePurity = Mathf.Clamp01(purity);
+            _looseScorched = scorched;
+            looseMineralOverride = mineral;
+            EnsureMineralPickup().Initialize(mineral, mineralReserve, false);
             CacheReferences();
         }
 
@@ -415,13 +427,17 @@ namespace _Scripts.Suxghui.Mining
             _rigidbody.linearVelocity = direction.normalized *
                                         (_maximumMotionDistance / Mathf.Max(0.05f, travelDuration));
             _rigidbody.angularVelocity = UnityEngine.Random.insideUnitSphere * angularSpeed;
+            EnsureMineralPickup().MarkCollectible();
         }
 
         private MiningFailureReason GetFailureReason(MiningTechType techType, MiningTechStats stats)
         {
             if (IsDepleted)
                 return MiningFailureReason.Depleted;
-            if (oreSource == null || oreSource.oreSO == null || oreSource.oreSO.mineral == null)
+            if (ResourceType == MiningResourceType.Stone &&
+                (oreSource == null || oreSource.oreSO == null || oreSource.oreSO.mineral == null))
+                return MiningFailureReason.MissingOreData;
+            if (ResourceType == MiningResourceType.LooseMineral && ResolveLooseMineral() == null)
                 return MiningFailureReason.MissingOreData;
 
             bool extractor = techType == MiningTechType.Extractor;
@@ -470,16 +486,24 @@ namespace _Scripts.Suxghui.Mining
                 oreSource = GetComponent<LSO_Ore>() ??
                             GetComponentInParent<LSO_Ore>() ??
                             GetComponentInChildren<LSO_Ore>(true);
-            if (_inventory == null)
-                _inventory = LSO_PlayerInventory.Instance ?? FindFirstObjectByType<LSO_PlayerInventory>();
-            if (_cargoWeight == null)
-                _cargoWeight = FindFirstObjectByType<LSO_Weight>();
+            if (_mineralPickup == null)
+                _mineralPickup = GetComponent<MineralPickup>();
         }
 
-        private bool TryResolveInventory()
+        private LSO_MineralSO ResolveLooseMineral()
         {
-            CacheReferences();
-            return _inventory != null;
+            if (looseMineralOverride != null)
+                return looseMineralOverride;
+            return oreSource != null && oreSource.oreSO != null
+                ? oreSource.oreSO.mineral
+                : null;
+        }
+
+        private MineralPickup EnsureMineralPickup()
+        {
+            if (_mineralPickup == null)
+                _mineralPickup = GetComponent<MineralPickup>() ?? gameObject.AddComponent<MineralPickup>();
+            return _mineralPickup;
         }
 
         private static MiningResult FailedResult(MiningFailureReason failure)

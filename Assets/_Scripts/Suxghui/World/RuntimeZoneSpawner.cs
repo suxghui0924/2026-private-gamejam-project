@@ -42,6 +42,17 @@ namespace _Scripts.Suxghui.World
             [FormerlySerializedAs("maximumOreScale"), Min(0.01f)]
             public float maximumStoneScale = 300f;
 
+            [Header("External Ore Surface Scatter")]
+            [Tooltip("Ore1/Ore2/Ore3처럼 공용으로 사용할 원석 모양입니다. 광물별 외형은 Material로 바뀝니다.")]
+            public GameObject[] externalOreTemplates = Array.Empty<GameObject>();
+            public LSO_MineralSO[] externalMinerals = Array.Empty<LSO_MineralSO>();
+            [Min(0)] public int minimumExternalOreCount = 1;
+            [Min(0)] public int maximumExternalOreCount = 3;
+            [Min(0.01f)] public float minimumExternalOreScale = 0.06f;
+            [Min(0.01f)] public float maximumExternalOreScale = 0.1f;
+            [Min(0f)] public float externalOreSurfaceOffset = 0.02f;
+            [Range(0f, 180f)] public float minimumExternalOreAngle = 35f;
+
             [Header("Mine Population")]
             public GameObject[] minePrefabs = Array.Empty<GameObject>();
             [Min(0)] public int mineLimit;
@@ -58,7 +69,7 @@ namespace _Scripts.Suxghui.World
 
         private sealed class SpawnMetadata
         {
-            public GameObject SourcePrefab;
+            public int SourceIndex;
             public LSO_OreSO OreDefinition;
             public SpawnCategory Category;
         }
@@ -77,7 +88,7 @@ namespace _Scripts.Suxghui.World
 
         private sealed class SavedSpawnRecord
         {
-            public GameObject SourcePrefab;
+            public int SourceIndex;
             public LSO_OreSO OreDefinition;
             public SpawnCategory Category;
             public Vector3 Position;
@@ -109,6 +120,7 @@ namespace _Scripts.Suxghui.World
         [Header("Startup")]
         [SerializeField] private bool fillToLimitOnStart = true;
         [SerializeField] private string runtimeContainerName = "RuntimeZoneSpawns";
+        [SerializeField] private bool hideSceneTemplatesAtRuntime = true;
 
         [Header("Zone Rules")]
         [SerializeField] private List<ZoneSpawnRule> zoneRules = new List<ZoneSpawnRule>
@@ -121,6 +133,8 @@ namespace _Scripts.Suxghui.World
                 minimumStoneScale = 200f,
                 maximumStoneScale = 300f,
                 mineLimit = 0,
+                minimumExternalOreCount = 1,
+                maximumExternalOreCount = 2,
                 respawnCooldownRange = new Vector2(10f, 12f),
                 minimumSpawnDistance = 50f
             },
@@ -132,6 +146,8 @@ namespace _Scripts.Suxghui.World
                 minimumStoneScale = 150f,
                 maximumStoneScale = 250f,
                 mineLimit = 25,
+                minimumExternalOreCount = 2,
+                maximumExternalOreCount = 4,
                 respawnCooldownRange = new Vector2(13f, 16f),
                 minimumSpawnDistance = 45f
             },
@@ -143,6 +159,8 @@ namespace _Scripts.Suxghui.World
                 minimumStoneScale = 100f,
                 maximumStoneScale = 200f,
                 mineLimit = 35,
+                minimumExternalOreCount = 3,
+                maximumExternalOreCount = 5,
                 respawnCooldownRange = new Vector2(17f, 20f),
                 minimumSpawnDistance = 40f
             }
@@ -258,6 +276,9 @@ namespace _Scripts.Suxghui.World
                 for (int i = 0; i < _runtimeStates.Count; i++)
                     FillStateToLimits(_runtimeStates[i]);
             }
+
+            if (hideSceneTemplatesAtRuntime)
+                HideSceneTemplates();
 
             _initialized = true;
         }
@@ -394,7 +415,7 @@ namespace _Scripts.Suxghui.World
                 if (IsTooCloseToExisting(position, rule.minimumSpawnDistance))
                     continue;
 
-                GameObject prefab = PickRandomPrefab(prefabs);
+                GameObject prefab = PickRandomPrefab(prefabs, out int sourceIndex);
                 if (prefab == null)
                     return false;
 
@@ -414,13 +435,14 @@ namespace _Scripts.Suxghui.World
                     : state.MineContainer;
                 GameObject instance = Instantiate(prefab, position, Random.rotation, parent);
                 instance.transform.localScale = Vector3.one * scale;
+                instance.SetActive(true);
 
                 if (category == SpawnCategory.Ore)
-                    ConfigureStone(instance, oreDefinition);
+                    ConfigureStone(instance, oreDefinition, rule);
 
                 state.Spawned[instance] = new SpawnMetadata
                 {
-                    SourcePrefab = prefab,
+                    SourceIndex = sourceIndex,
                     OreDefinition = oreDefinition,
                     Category = category
                 };
@@ -468,12 +490,12 @@ namespace _Scripts.Suxghui.World
                 {
                     GameObject instance = pair.Key;
                     SpawnMetadata metadata = pair.Value;
-                    if (instance == null || metadata.SourcePrefab == null)
+                    if (instance == null)
                         continue;
 
                     savedZone.Spawns.Add(new SavedSpawnRecord
                     {
-                        SourcePrefab = metadata.SourcePrefab,
+                        SourceIndex = metadata.SourceIndex,
                         OreDefinition = metadata.OreDefinition,
                         Category = metadata.Category,
                         Position = instance.transform.position,
@@ -505,25 +527,28 @@ namespace _Scripts.Suxghui.World
                 for (int j = 0; j < savedZone.Spawns.Count; j++)
                 {
                     SavedSpawnRecord record = savedZone.Spawns[j];
-                    if (record.SourcePrefab == null)
+                    GameObject[] currentPrefabs = GetPrefabs(runtime.Rule, record.Category);
+                    GameObject sourcePrefab = GetPrefabAt(currentPrefabs, record.SourceIndex);
+                    if (sourcePrefab == null)
                         continue;
 
                     Transform parent = record.Category == SpawnCategory.Ore
                         ? runtime.OreContainer
                         : runtime.MineContainer;
                     GameObject instance = Instantiate(
-                        record.SourcePrefab,
+                        sourcePrefab,
                         record.Position,
                         record.Rotation,
                         parent);
                     instance.transform.localScale = record.Scale;
+                    instance.SetActive(true);
 
                     if (record.Category == SpawnCategory.Ore)
-                        ConfigureStone(instance, record.OreDefinition);
+                        ConfigureStone(instance, record.OreDefinition, runtime.Rule);
 
                     runtime.Spawned[instance] = new SpawnMetadata
                     {
-                        SourcePrefab = record.SourcePrefab,
+                        SourceIndex = record.SourceIndex,
                         OreDefinition = record.OreDefinition,
                         Category = record.Category
                     };
@@ -549,22 +574,178 @@ namespace _Scripts.Suxghui.World
             return remainingCooldown < 0f ? -1f : Time.time + remainingCooldown;
         }
 
-        private static void ConfigureStone(GameObject instance, LSO_OreSO oreDefinition)
+        private static void ConfigureStone(
+            GameObject instance,
+            LSO_OreSO oreDefinition,
+            ZoneSpawnRule rule)
         {
             instance.tag = "Stone";
-            if (oreDefinition == null)
-                return;
-
             LSO_Ore ore = instance.GetComponent<LSO_Ore>() ?? instance.AddComponent<LSO_Ore>();
             ore.oreSO = oreDefinition;
+            ore.SetWorldOreTemplates(rule.externalOreTemplates);
 
             OreContents contents = instance.GetComponent<OreContents>() ??
                                    instance.AddComponent<OreContents>();
             contents.SetInternalOreSO(oreDefinition);
 
-            MineableAsteroid mineable = instance.GetComponent<MineableAsteroid>();
-            if (mineable != null)
-                mineable.ConfigureOre(ore);
+            MineableAsteroid mineable = instance.GetComponent<MineableAsteroid>() ??
+                                       instance.AddComponent<MineableAsteroid>();
+            mineable.ConfigureOre(ore);
+
+            ScatterExternalOres(instance, contents, rule, oreDefinition);
+        }
+
+        private static void ScatterExternalOres(
+            GameObject stone,
+            OreContents contents,
+            ZoneSpawnRule rule,
+            LSO_OreSO internalOre)
+        {
+            if (!HasValidPrefab(rule.externalOreTemplates))
+                return;
+
+            LSO_MineralSO fallbackMineral = internalOre != null ? internalOre.mineral : null;
+            if (!HasValidMineral(rule.externalMinerals) && fallbackMineral == null)
+                return;
+
+            SphereCollider sphere = stone.GetComponent<SphereCollider>() ??
+                                    stone.GetComponentInChildren<SphereCollider>();
+            Collider stoneCollider = sphere != null
+                ? sphere
+                : stone.GetComponentInChildren<Collider>();
+            if (stoneCollider == null)
+                return;
+
+            int minimumCount = Mathf.Max(0, rule.minimumExternalOreCount);
+            int maximumCount = Mathf.Max(minimumCount, rule.maximumExternalOreCount);
+            int count = Random.Range(minimumCount, maximumCount + 1);
+            var directions = new List<Vector3>(count);
+            float minimumAngle = Mathf.Clamp(rule.minimumExternalOreAngle, 0f, 180f);
+            float cosineLimit = Mathf.Cos(minimumAngle * Mathf.Deg2Rad);
+
+            for (int i = 0; i < count; i++)
+            {
+                if (!TryFindSurfaceDirection(directions, cosineLimit, out Vector3 direction))
+                    break;
+
+                GameObject template = PickRandomPrefab(rule.externalOreTemplates);
+                LSO_MineralSO mineral = PickRandomMineral(rule.externalMinerals) ?? fallbackMineral;
+                if (template == null || mineral == null)
+                    continue;
+
+                directions.Add(direction);
+                GetSurface(stoneCollider, sphere, direction, out Vector3 center, out float radius);
+                Vector3 position = center + direction * (radius + rule.externalOreSurfaceOffset);
+                Quaternion rotation = Quaternion.FromToRotation(Vector3.up, direction) *
+                                      Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up);
+                GameObject externalOre = Instantiate(template, position, rotation);
+                externalOre.SetActive(true);
+                float scaleRatio = Random.Range(
+                    Mathf.Min(rule.minimumExternalOreScale, rule.maximumExternalOreScale),
+                    Mathf.Max(rule.minimumExternalOreScale, rule.maximumExternalOreScale));
+                externalOre.transform.localScale = Abs(stone.transform.lossyScale) * scaleRatio;
+                externalOre.transform.SetParent(stone.transform, true);
+                externalOre.name = $"External {mineral.mineralName} Ore";
+                externalOre.tag = "Ore";
+                SetLayerRecursively(externalOre.transform, stone.layer);
+
+                MineralPickup pickup = externalOre.GetComponent<MineralPickup>() ??
+                                       externalOre.AddComponent<MineralPickup>();
+                pickup.Initialize(mineral, 1, false);
+                MineableAsteroid mineable = externalOre.GetComponent<MineableAsteroid>() ??
+                                           externalOre.AddComponent<MineableAsteroid>();
+                mineable.InitializeAsLooseMineral(mineral, 1);
+                contents.RegisterExternalOre(mineral, externalOre.transform);
+            }
+        }
+
+        private static void GetSurface(
+            Collider targetCollider,
+            SphereCollider sphere,
+            Vector3 direction,
+            out Vector3 center,
+            out float radius)
+        {
+            if (sphere != null)
+            {
+                center = sphere.transform.TransformPoint(sphere.center);
+                Vector3 scale = Abs(sphere.transform.lossyScale);
+                radius = sphere.radius * Mathf.Max(scale.x, Mathf.Max(scale.y, scale.z));
+                return;
+            }
+
+            Bounds bounds = targetCollider.bounds;
+            center = bounds.center;
+            Vector3 absoluteDirection = Abs(direction);
+            radius = Vector3.Dot(bounds.extents, absoluteDirection);
+        }
+
+        private static bool TryFindSurfaceDirection(
+            List<Vector3> placedDirections,
+            float cosineLimit,
+            out Vector3 direction)
+        {
+            const int maximumAttempts = 100;
+            for (int attempt = 0; attempt < maximumAttempts; attempt++)
+            {
+                Vector3 candidate = Random.onUnitSphere;
+                bool tooClose = false;
+                for (int i = 0; i < placedDirections.Count; i++)
+                {
+                    if (Vector3.Dot(candidate, placedDirections[i]) <= cosineLimit)
+                        continue;
+                    tooClose = true;
+                    break;
+                }
+
+                if (tooClose)
+                    continue;
+
+                direction = candidate;
+                return true;
+            }
+
+            direction = Vector3.up;
+            return false;
+        }
+
+        private void HideSceneTemplates()
+        {
+            var templates = new HashSet<GameObject>();
+            for (int i = 0; i < zoneRules.Count; i++)
+            {
+                AddSceneTemplates(templates, zoneRules[i].stonePrefabs);
+                AddSceneTemplates(templates, zoneRules[i].minePrefabs);
+                AddSceneTemplates(templates, zoneRules[i].externalOreTemplates);
+            }
+
+            foreach (GameObject template in templates)
+                template.SetActive(false);
+        }
+
+        private static void AddSceneTemplates(HashSet<GameObject> destination, GameObject[] templates)
+        {
+            if (templates == null)
+                return;
+
+            for (int i = 0; i < templates.Length; i++)
+            {
+                GameObject template = templates[i];
+                if (template != null && template.scene.IsValid())
+                    destination.Add(template);
+            }
+        }
+
+        private static void SetLayerRecursively(Transform root, int layer)
+        {
+            root.gameObject.layer = layer;
+            for (int i = 0; i < root.childCount; i++)
+                SetLayerRecursively(root.GetChild(i), layer);
+        }
+
+        private static Vector3 Abs(Vector3 value)
+        {
+            return new Vector3(Mathf.Abs(value.x), Mathf.Abs(value.y), Mathf.Abs(value.z));
         }
 
         private RuntimeZoneState FindRuntimeState(ZoneType zoneType)
@@ -657,6 +838,12 @@ namespace _Scripts.Suxghui.World
 
         private static GameObject PickRandomPrefab(GameObject[] prefabs)
         {
+            return PickRandomPrefab(prefabs, out _);
+        }
+
+        private static GameObject PickRandomPrefab(GameObject[] prefabs, out int sourceIndex)
+        {
+            sourceIndex = -1;
             int validCount = 0;
             for (int i = 0; i < prefabs.Length; i++)
             {
@@ -673,10 +860,20 @@ namespace _Scripts.Suxghui.World
                 if (prefabs[i] == null)
                     continue;
                 if (selectedIndex-- == 0)
+                {
+                    sourceIndex = i;
                     return prefabs[i];
+                }
             }
 
             return null;
+        }
+
+        private static GameObject GetPrefabAt(GameObject[] prefabs, int index)
+        {
+            return prefabs != null && index >= 0 && index < prefabs.Length
+                ? prefabs[index]
+                : null;
         }
 
         private static LSO_OreSO PickRandomOreDefinition(LSO_OreSO[] definitions)
@@ -706,6 +903,38 @@ namespace _Scripts.Suxghui.World
             return null;
         }
 
+        private static bool HasValidMineral(LSO_MineralSO[] minerals)
+        {
+            if (minerals == null)
+                return false;
+            for (int i = 0; i < minerals.Length; i++)
+                if (minerals[i] != null)
+                    return true;
+            return false;
+        }
+
+        private static LSO_MineralSO PickRandomMineral(LSO_MineralSO[] minerals)
+        {
+            if (!HasValidMineral(minerals))
+                return null;
+
+            int validCount = 0;
+            for (int i = 0; i < minerals.Length; i++)
+                if (minerals[i] != null)
+                    validCount++;
+
+            int selectedIndex = Random.Range(0, validCount);
+            for (int i = 0; i < minerals.Length; i++)
+            {
+                if (minerals[i] == null)
+                    continue;
+                if (selectedIndex-- == 0)
+                    return minerals[i];
+            }
+
+            return null;
+        }
+
         private static void NormalizeRule(ZoneSpawnRule rule)
         {
             rule.stoneLimit = Mathf.Max(0, rule.stoneLimit);
@@ -714,6 +943,14 @@ namespace _Scripts.Suxghui.World
             rule.mineRespawnBatchSize = Mathf.Max(1, rule.mineRespawnBatchSize);
             rule.minimumStoneScale = Mathf.Max(0.01f, rule.minimumStoneScale);
             rule.maximumStoneScale = Mathf.Max(0.01f, rule.maximumStoneScale);
+            rule.minimumExternalOreCount = Mathf.Max(0, rule.minimumExternalOreCount);
+            rule.maximumExternalOreCount = Mathf.Max(
+                rule.minimumExternalOreCount,
+                rule.maximumExternalOreCount);
+            rule.minimumExternalOreScale = Mathf.Max(0.01f, rule.minimumExternalOreScale);
+            rule.maximumExternalOreScale = Mathf.Max(0.01f, rule.maximumExternalOreScale);
+            rule.externalOreSurfaceOffset = Mathf.Max(0f, rule.externalOreSurfaceOffset);
+            rule.minimumExternalOreAngle = Mathf.Clamp(rule.minimumExternalOreAngle, 0f, 180f);
             rule.minimumMineScale = Mathf.Max(0.01f, rule.minimumMineScale);
             rule.maximumMineScale = Mathf.Max(0.01f, rule.maximumMineScale);
             rule.minimumSpawnDistance = Mathf.Max(0f, rule.minimumSpawnDistance);

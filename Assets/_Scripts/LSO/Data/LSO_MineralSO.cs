@@ -10,10 +10,8 @@ namespace _Scripts.LSO.Data
         public string mineralName;
 
         [Header("Presentation")]
-        [Tooltip("광석 파괴 시 월드에 생성할 원석 모델 프리팹입니다.")]
-        public GameObject mineralPrefab;
-        [ColorUsage(false, true)]
-        public Color mineralColor = Color.white;
+        [Tooltip("월드에 배치되는 공용 원석 모델에 적용할 머티리얼입니다.")]
+        public Material mineralMaterial;
         [TextArea]
         public string mineralDescription;
 
