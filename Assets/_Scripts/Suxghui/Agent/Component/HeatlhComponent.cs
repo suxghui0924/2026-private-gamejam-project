@@ -11,7 +11,9 @@ namespace _Scripts.Suxghui.Agent.Component
 
         public bool CurrentHeartbeat { get; private set; } = true;
         
-        [SerializeField] private int MAXHEALTH = 0;
+        [SerializeField, Min(1)] private int MAXHEALTH = 100;
+
+        public int MaxHealth => MAXHEALTH;
 
         private void Awake()
         {
@@ -20,13 +22,26 @@ namespace _Scripts.Suxghui.Agent.Component
 
         public void GetDamage(int damage)
         {
-            health.Value -= Mathf.Clamp(health.Value - damage, 0, MAXHEALTH);
+            if (damage <= 0)
+                return;
+
+            health.Value = Mathf.Clamp(health.Value - damage, 0, MAXHEALTH);
             CheckHeartBeat();
         }
 
         public void HealDamage(int amount)
         {
-            health.Value += Mathf.Clamp(health.Value + amount, 0, MAXHEALTH);
+            if (amount <= 0)
+                return;
+
+            health.Value = Mathf.Clamp(health.Value + amount, 0, MAXHEALTH);
+            CheckHeartBeat();
+        }
+
+        public void SetHealthState(int currentHealth, int maxHealth)
+        {
+            MAXHEALTH = Mathf.Max(1, maxHealth);
+            health.Value = Mathf.Clamp(currentHealth, 0, MAXHEALTH);
             CheckHeartBeat();
         }
 

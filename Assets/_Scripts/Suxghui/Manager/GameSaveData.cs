@@ -1,5 +1,4 @@
 using System;
-using UnityEngine.Serialization;
 
 namespace _Scripts.Suxghui.Manager
 {
@@ -21,12 +20,13 @@ namespace _Scripts.Suxghui.Manager
     {
         public int saveVersion;
         public int money;
-        [FormerlySerializedAs("fuel")] public float health;
-        [FormerlySerializedAs("maxFuel")] public float maxHealth;
+        public float health;
+        public float maxHealth;
         public float fuel;
         public float maxFuel;
         public float cargoWeight;
         public float maxCargoWeight;
+        public float shipSpeed;
         public int selectedMiningTool;
         public string currentTechId;
         public int drillLevel;
@@ -35,7 +35,7 @@ namespace _Scripts.Suxghui.Manager
         public int analysisRadarLevel;
         public int shipSpeedLevel;
         public int cargoLevel;
-        [FormerlySerializedAs("fuelLevel")] public int healthLevel;
+        public int healthLevel;
         public int fuelLevel;
         public int boosterLevel;
         public string currentMiningToolId;
@@ -45,14 +45,15 @@ namespace _Scripts.Suxghui.Manager
         {
             return new GameSaveData
             {
-                saveVersion = 1,
+                saveVersion = 2,
                 money = 0,
                 health = 100f,
                 maxHealth = 100f,
                 fuel = 100f,
                 maxFuel = 100f,
                 cargoWeight = 0f,
-                maxCargoWeight = 100f,
+                maxCargoWeight = 20f,
+                shipSpeed = 10f,
                 selectedMiningTool = 0,
                 currentTechId = "drill",
                 drillLevel = 0,

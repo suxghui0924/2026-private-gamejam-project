@@ -6,11 +6,12 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Space Ship Booster
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6c9f6c1f5bb843c4b9f2e7f8f3b2a1d0, type: 3}
-  m_Enabled: 1
+  m_Name: Space Ship Booster
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.Player.BoosterSettingsSO
-  speedMultiplier: 1.65
-  acceleration: 1.4
-  boosterFov: 68
+  <SpeedMultiplier>k__BackingField: 3
+  <Acceleration>k__BackingField: 12
+  <BoosterFov>k__BackingField: 80
