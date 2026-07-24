@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce197447e5444e338f073d62d6dec659, type: 3}
-  m_Name: Iron
+  m_Name: Draconium
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.LSO.Data.LSO_MineralSO
-  mineralName: "\uCCA0"
-  mineralDescription: "\uADF8\uAC83\uC740 \uB9E4\uC6B0 \uD6A8\uC728\uC801\uC774\uACE0
-    \uB9E4\uC6B0 \uD754\uD55C"
-  mineralPrice: 70
-  mineralRarity: 0
-  mineralType: 1
+  mineralType: 11
+  mineralName: "\uB4DC\uB798\uCF54\uB284"
+  mineralColor: {r: 0.93, g: 0.2, b: 0.06, a: 1}
+  mineralDescription: "\uAC15\uB82C\uD55C \uC8FC\uD64D\uC0C9 \uAD11\uBB3C"
+  mineralPrice: 370
+  mineralRarity: 3
