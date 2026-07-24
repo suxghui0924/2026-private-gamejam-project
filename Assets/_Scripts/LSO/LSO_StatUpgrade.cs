@@ -12,7 +12,8 @@ namespace _Scripts.LSO
         [SerializeField] private TextMeshProUGUI levelText;
         [SerializeField] private TextMeshProUGUI costText;
         [SerializeField] private string maxText = "MAX";
-
+        [SerializeField] private GameObject icon;
+        
         private int _price;
         private int _level;
         private int _maxLevel;
@@ -107,6 +108,7 @@ namespace _Scripts.LSO
             {
                 levelText.text = "-";
                 costText.text = "";
+                icon.SetActive(false);
                 return;
             }
 
@@ -114,6 +116,7 @@ namespace _Scripts.LSO
             {
                 levelText.text = maxText;
                 costText.text = "";
+                icon.SetActive(false);
                 return;
             }
 
