@@ -15,8 +15,8 @@ MonoBehaviour:
   sounds:
   - soundID: MainBGM
     type: 2
-    audioSourcePrefab: {fileID: 0}
-    clip: {fileID: 0}
+    audioSourcePrefab: {fileID: 3339975149277409374, guid: 956a37f927bd107479f44bd579546d5d, type: 3}
+    clip: {fileID: 8300000, guid: 0cc263650ca79b248ab227c47c8bf9d1, type: 3}
     volume: 1
     looping: 1
     pitch: 0
