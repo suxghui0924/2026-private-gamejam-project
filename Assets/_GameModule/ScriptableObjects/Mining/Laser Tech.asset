@@ -20,6 +20,7 @@ MonoBehaviour:
     damagePerAction: 28
     actionsPerSecond: 1.25
     range: 180
+    targetingRange: 240
     yieldMultiplier: 1
     purityBonus: 0
     stoneRatio: 0
@@ -38,6 +39,7 @@ MonoBehaviour:
     damagePerAction: 32.2
     actionsPerSecond: 1.4375
     range: 180
+    targetingRange: 240
     yieldMultiplier: 1
     purityBonus: 0
     stoneRatio: 0
@@ -56,6 +58,7 @@ MonoBehaviour:
     damagePerAction: 37.03
     actionsPerSecond: 1.653125
     range: 180
+    targetingRange: 240
     yieldMultiplier: 1
     purityBonus: 0
     stoneRatio: 0
@@ -74,6 +77,7 @@ MonoBehaviour:
     damagePerAction: 42.5845
     actionsPerSecond: 1.901094
     range: 180
+    targetingRange: 240
     yieldMultiplier: 1
     purityBonus: 0
     stoneRatio: 0
@@ -92,6 +96,7 @@ MonoBehaviour:
     damagePerAction: 42.5845
     actionsPerSecond: 1.901094
     range: 180
+    targetingRange: 240
     yieldMultiplier: 1
     purityBonus: 0.05
     stoneRatio: 0
@@ -110,6 +115,7 @@ MonoBehaviour:
     damagePerAction: 48.9722
     actionsPerSecond: 2.186258
     range: 180
+    targetingRange: 240
     yieldMultiplier: 1
     purityBonus: 0.1
     stoneRatio: 0

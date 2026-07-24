@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce197447e5444e338f073d62d6dec659, type: 3}
   m_Name: Scorched Iron
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.LSO.Data.LSO_MineralSO
-  mineralName: Scorched Iron
-  mineralDescription: Iron damaged by excessive laser heat.
+  mineralType: 1
+  mineralName: "\uADF8\uC744\uB9B0 \uCCA0"
+  mineralColor: {r: 0.24, g: 0.12, b: 0.1, a: 1}
+  mineralDescription: "\uB808\uC774\uC800\uC758 \uACFC\uB3C4\uD55C \uC5F4\uB85C \uC190\uC0C1\uB41C \uCCA0"
   mineralPrice: 49
   mineralRarity: 0
-  mineralType: 1

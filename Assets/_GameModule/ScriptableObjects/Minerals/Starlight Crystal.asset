@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce197447e5444e338f073d62d6dec659, type: 3}
-  m_Name: Stone
+  m_Name: Starlight Crystal
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.LSO.Data.LSO_MineralSO
-  mineralType: 0
-  mineralName: "\uC11D\uC7AC"
-  mineralColor: {r: 0.48, g: 0.5, b: 0.52, a: 1}
-  mineralDescription: "\uAE30\uBCF8 \uC6B4\uC11D \uC0C9\uAE54\uC758 \uD68C\uC0C9 \uC11D\uC7AC"
-  mineralPrice: 30
-  mineralRarity: 0
+  mineralType: 8
+  mineralName: "\uC2A4\uD0C0\uB77C\uC774\uD2B8 \uD06C\uB9AC\uC2A4\uD0C8"
+  mineralColor: {r: 0.78, g: 0.94, b: 1, a: 1}
+  mineralDescription: "\uBCC4\uBE5B \uBB38\uC591\uACFC \uC774\uD399\uD2B8\uAC00 \uB098\uD0C0\uB098\uB294 \uD06C\uB9AC\uC2A4\uD0C8"
+  mineralPrice: 240
+  mineralRarity: 2

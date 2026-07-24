@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce197447e5444e338f073d62d6dec659, type: 3}
-  m_Name: Stone
+  m_Name: Copper
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.LSO.Data.LSO_MineralSO
-  mineralType: 0
-  mineralName: "\uC11D\uC7AC"
-  mineralColor: {r: 0.48, g: 0.5, b: 0.52, a: 1}
-  mineralDescription: "\uAE30\uBCF8 \uC6B4\uC11D \uC0C9\uAE54\uC758 \uD68C\uC0C9 \uC11D\uC7AC"
-  mineralPrice: 30
+  mineralType: 2
+  mineralName: "\uAD6C\uB9AC"
+  mineralColor: {r: 0.72, g: 0.33, b: 0.16, a: 1}
+  mineralDescription: "\uAD6C\uB9AC\uC0C9 \uAD11\uBB3C"
+  mineralPrice: 80
   mineralRarity: 0

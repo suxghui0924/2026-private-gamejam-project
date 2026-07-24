@@ -2,16 +2,24 @@ using UnityEngine;
 
 namespace _Scripts.LSO.Data
 {
-    [CreateAssetMenu(fileName = "New MineralSO",menuName = "SO/LSO_MineralSO")]
+    [CreateAssetMenu(fileName = "New MineralSO", menuName = "SO/LSO_MineralSO")]
     public class LSO_MineralSO : ScriptableObject
     {
-        [Header("광물 종류")]
+        [Header("Identity")]
         public LSO_MineralType mineralType;
-        [Header("설명")]
+        public string mineralName;
+
+        [Header("Presentation")]
+        [Tooltip("광석 파괴 시 월드에 생성할 원석 모델 프리팹입니다.")]
+        public GameObject mineralPrefab;
+        [ColorUsage(false, true)]
+        public Color mineralColor = Color.white;
+        [TextArea]
         public string mineralDescription;
-        [Header("Kg당 가격")]
+
+        [Header("Economy")]
+        [Min(0)]
         public int mineralPrice;
-        [Header("광물 희귀도")]
         public LSO_MineralRarity mineralRarity;
     }
 }

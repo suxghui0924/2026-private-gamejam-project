@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce197447e5444e338f073d62d6dec659, type: 3}
-  m_Name: Stone
+  m_Name: Quasar Crystal
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.LSO.Data.LSO_MineralSO
-  mineralType: 0
-  mineralName: "\uC11D\uC7AC"
-  mineralColor: {r: 0.48, g: 0.5, b: 0.52, a: 1}
-  mineralDescription: "\uAE30\uBCF8 \uC6B4\uC11D \uC0C9\uAE54\uC758 \uD68C\uC0C9 \uC11D\uC7AC"
-  mineralPrice: 30
-  mineralRarity: 0
+  mineralType: 12
+  mineralName: "\uD018\uC774\uC0AC \uD06C\uB9AC\uC2A4\uD0C8"
+  mineralColor: {r: 1, g: 1, b: 1, a: 1}
+  mineralDescription: "\uBC1D\uC740 \uD558\uC580\uC0C9 \uD06C\uB9AC\uC2A4\uD0C8"
+  mineralPrice: 380
+  mineralRarity: 3

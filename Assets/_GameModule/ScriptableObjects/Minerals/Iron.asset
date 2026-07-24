@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce197447e5444e338f073d62d6dec659, type: 3}
-  m_Name: Stone
+  m_Name: Iron
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.LSO.Data.LSO_MineralSO
-  mineralType: 0
-  mineralName: "\uC11D\uC7AC"
-  mineralColor: {r: 0.48, g: 0.5, b: 0.52, a: 1}
-  mineralDescription: "\uAE30\uBCF8 \uC6B4\uC11D \uC0C9\uAE54\uC758 \uD68C\uC0C9 \uC11D\uC7AC"
-  mineralPrice: 30
+  mineralType: 1
+  mineralName: "\uCCA0"
+  mineralColor: {r: 0.74, g: 0.76, b: 0.78, a: 1}
+  mineralDescription: "\uBC1D\uC740 \uD68C\uC0C9\uC758 \uD754\uD55C \uCCA0 \uAD11\uBB3C"
+  mineralPrice: 70
   mineralRarity: 0

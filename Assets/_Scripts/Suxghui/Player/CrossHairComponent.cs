@@ -33,6 +33,7 @@ namespace _Scripts.Suxghui.Player
         [SerializeField] private bool hideWhenBehindCamera = true;
 
         private readonly RaycastHit[] _hits = new RaycastHit[64];
+        private readonly RaycastHit[] _occlusionHits = new RaycastHit[32];
         private Canvas _canvas;
         private RectTransform _canvasRect;
         private RectTransform _crossHairRect;
@@ -44,9 +45,13 @@ namespace _Scripts.Suxghui.Player
         private Color _statusColor;
         private Collider _stickyTarget;
         private float _stickyTargetUntil;
+        private float _targetingDistance = float.PositiveInfinity;
+
+        private float EffectiveMaxDistance => Mathf.Min(maxDistance, _targetingDistance);
 
         public bool HasTarget { get; private set; }
         public Vector3 TargetPoint { get; private set; }
+        public Vector3 TargetSurfacePoint { get; private set; }
         public Collider TargetCollider { get; private set; }
         public Vector3 CorrectedAimDirection
         {
@@ -161,11 +166,12 @@ namespace _Scripts.Suxghui.Player
             Vector3 direction = GetAimDirection();
             Vector3 origin = aimOrigin.position;
             Ray shipRay = new Ray(origin, direction);
-            Vector3 fallbackPoint = origin + direction * Mathf.Min(fallbackDistance, maxDistance);
+            Vector3 fallbackPoint = origin + direction * Mathf.Min(fallbackDistance, EffectiveMaxDistance);
 
             HasTarget = false;
             TargetCollider = null;
             TargetPoint = fallbackPoint;
+            TargetSurfacePoint = fallbackPoint;
 
             TryGetDirectHit(shipRay, out RaycastHit shipHit);
             RaycastHit nearestHit = default;
@@ -186,9 +192,7 @@ namespace _Scripts.Suxghui.Player
 
             if (nearestHit.collider != null)
             {
-                Vector3 surfacePoint = nearestHit.point;
-                if (surfacePoint == Vector3.zero)
-                    surfacePoint = nearestHit.collider.ClosestPoint(shipRay.GetPoint(nearestHit.distance));
+                Vector3 surfacePoint = GetTargetSurfacePoint(nearestHit.collider, shipRay);
 
                 Vector3 correctedPoint = Vector3.Lerp(
                     surfacePoint,
@@ -199,6 +203,7 @@ namespace _Scripts.Suxghui.Player
 
                 if (IsPointInFront(correctedPoint))
                 {
+                    TargetSurfacePoint = surfacePoint;
                     TargetPoint = correctedPoint;
                     TargetCollider = nearestHit.collider;
                     HasTarget = true;
@@ -215,6 +220,7 @@ namespace _Scripts.Suxghui.Player
                 TargetPoint = IsPointInFront(correctedPoint) ? correctedPoint : stickyPoint;
                 if (IsPointInFront(TargetPoint))
                 {
+                    TargetSurfacePoint = stickyPoint;
                     TargetCollider = _stickyTarget;
                     HasTarget = true;
                 }
@@ -231,7 +237,7 @@ namespace _Scripts.Suxghui.Player
 
         private bool TryGetDirectHit(Ray ray, out RaycastHit nearestHit)
         {
-            int hitCount = Physics.RaycastNonAlloc(ray, _hits, maxDistance, hitLayers, triggerInteraction);
+            int hitCount = Physics.RaycastNonAlloc(ray, _hits, EffectiveMaxDistance, hitLayers, triggerInteraction);
             return TryGetNearestValidHit(hitCount, out nearestHit);
         }
 
@@ -246,7 +252,7 @@ namespace _Scripts.Suxghui.Player
                     ray,
                     nearAimAssistRadius,
                     _hits,
-                    Mathf.Min(maxDistance, nearAimAssistDistance),
+                    Mathf.Min(EffectiveMaxDistance, nearAimAssistDistance),
                     hitLayers,
                     triggerInteraction);
                 if (TryGetBestAssistedHit(ray, nearHitCount, out nearestHit))
@@ -260,7 +266,7 @@ namespace _Scripts.Suxghui.Player
                 ray,
                 aimAssistRadius,
                 _hits,
-                maxDistance,
+                EffectiveMaxDistance,
                 hitLayers,
                 triggerInteraction);
             return TryGetBestAssistedHit(ray, hitCount, out nearestHit);
@@ -270,6 +276,16 @@ namespace _Scripts.Suxghui.Player
         {
             origin = aimOrigin != null ? aimOrigin.position : transform.position;
             direction = CorrectedAimDirection;
+        }
+
+        public void SetTargetingDistance(float distance)
+        {
+            _targetingDistance = Mathf.Max(1f, distance);
+        }
+
+        public void ClearTargetingDistance()
+        {
+            _targetingDistance = float.PositiveInfinity;
         }
 
         public void SetStatusColor(Color color)
@@ -298,7 +314,7 @@ namespace _Scripts.Suxghui.Player
         private bool TryGetNearestValidHit(int hitCount, out RaycastHit nearestHit)
         {
             nearestHit = default;
-            float nearestDistance = maxDistance;
+            float nearestDistance = EffectiveMaxDistance;
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -332,7 +348,7 @@ namespace _Scripts.Suxghui.Player
 
                 Vector3 center = hit.collider.bounds.center;
                 float distanceAlongRay = Vector3.Dot(center - aimRay.origin, aimRay.direction);
-                if (distanceAlongRay <= 0f || distanceAlongRay > maxDistance)
+                if (distanceAlongRay <= 0f || distanceAlongRay > EffectiveMaxDistance)
                     continue;
 
                 Vector3 pointOnRay = aimRay.GetPoint(distanceAlongRay);
@@ -342,9 +358,11 @@ namespace _Scripts.Suxghui.Player
 
                 float angularError = Vector3.Distance(pointOnRay, surfacePoint) /
                                      Mathf.Max(1f, distanceAlongRay);
-                float distanceTieBreaker = distanceAlongRay / maxDistance * 0.001f;
+                float distanceTieBreaker = distanceAlongRay / EffectiveMaxDistance * 0.001f;
                 float score = angularError + distanceTieBreaker;
                 if (score >= bestScore)
+                    continue;
+                if (IsOccluded(hit.collider, aimRay.origin))
                     continue;
 
                 bestScore = score;
@@ -365,8 +383,13 @@ namespace _Scripts.Suxghui.Player
 
             Vector3 center = _stickyTarget.bounds.center;
             float distanceAlongRay = Vector3.Dot(center - aimRay.origin, aimRay.direction);
-            if (distanceAlongRay <= 0f || distanceAlongRay > maxDistance)
+            if (distanceAlongRay <= 0f || distanceAlongRay > EffectiveMaxDistance)
                 return false;
+            if (IsOccluded(_stickyTarget, aimRay.origin))
+            {
+                _stickyTarget = null;
+                return false;
+            }
 
             float assistRadius = distanceAlongRay <= nearAimAssistDistance
                 ? nearAimAssistRadius
@@ -382,6 +405,61 @@ namespace _Scripts.Suxghui.Player
 
             _stickyTargetUntil = Time.unscaledTime + targetStickDuration;
             return true;
+        }
+
+        private Vector3 GetTargetSurfacePoint(Collider targetCollider, Ray aimRay)
+        {
+            if (targetCollider.Raycast(aimRay, out RaycastHit exactHit, EffectiveMaxDistance))
+                return exactHit.point;
+
+            Vector3 center = targetCollider.bounds.center;
+            float distanceAlongRay = Mathf.Clamp(
+                Vector3.Dot(center - aimRay.origin, aimRay.direction),
+                0f,
+                EffectiveMaxDistance);
+            return targetCollider.ClosestPoint(aimRay.GetPoint(distanceAlongRay));
+        }
+
+        private bool IsOccluded(Collider targetCollider, Vector3 rayOrigin)
+        {
+            Vector3 toTarget = targetCollider.bounds.center - rayOrigin;
+            float targetDistance = toTarget.magnitude;
+            if (targetDistance < 0.0001f)
+                return false;
+
+            int hitCount = Physics.RaycastNonAlloc(
+                rayOrigin,
+                toTarget / targetDistance,
+                _occlusionHits,
+                Mathf.Min(targetDistance + 0.05f, EffectiveMaxDistance),
+                hitLayers,
+                triggerInteraction);
+            Collider nearestCollider = null;
+            float nearestDistance = float.PositiveInfinity;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = _occlusionHits[i];
+                if (hit.collider == null || IsOwnCollider(hit.collider) || hit.distance >= nearestDistance)
+                    continue;
+
+                nearestDistance = hit.distance;
+                nearestCollider = hit.collider;
+            }
+
+            return nearestCollider != null && !IsSameTarget(nearestCollider, targetCollider);
+        }
+
+        private static bool IsSameTarget(Collider first, Collider second)
+        {
+            if (first == second)
+                return true;
+            if (first.attachedRigidbody != null && first.attachedRigidbody == second.attachedRigidbody)
+                return true;
+
+            Transform firstTransform = first.transform;
+            Transform secondTransform = second.transform;
+            return firstTransform.IsChildOf(secondTransform) || secondTransform.IsChildOf(firstTransform);
         }
 
         private bool IsPointInFront(Vector3 point)
@@ -462,7 +540,9 @@ namespace _Scripts.Suxghui.Player
                 : -origin.up;
 
             Gizmos.color = HasTarget ? Color.cyan : Color.white;
-            Gizmos.DrawLine(origin.position, origin.position + direction * Mathf.Min(fallbackDistance, maxDistance));
+            Gizmos.DrawLine(
+                origin.position,
+                origin.position + direction * Mathf.Min(fallbackDistance, EffectiveMaxDistance));
         }
     }
 }

@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce197447e5444e338f073d62d6dec659, type: 3}
-  m_Name: Stone
+  m_Name: Astral
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.LSO.Data.LSO_MineralSO
-  mineralType: 0
-  mineralName: "\uC11D\uC7AC"
-  mineralColor: {r: 0.48, g: 0.5, b: 0.52, a: 1}
-  mineralDescription: "\uAE30\uBCF8 \uC6B4\uC11D \uC0C9\uAE54\uC758 \uD68C\uC0C9 \uC11D\uC7AC"
-  mineralPrice: 30
-  mineralRarity: 0
+  mineralType: 14
+  mineralName: "\uC544\uC2A4\uD2B8\uB784"
+  mineralColor: {r: 0.03, g: 0.08, b: 0.3, a: 1}
+  mineralDescription: "\uAE4A\uC740 \uB0A8\uC0C9\uC758 \uC804\uC124 \uAD11\uBB3C"
+  mineralPrice: 430
+  mineralRarity: 4

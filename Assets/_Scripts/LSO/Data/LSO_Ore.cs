@@ -1,12 +1,31 @@
 using UnityEngine;
+using _Scripts.Suxghui.Mining;
 
 namespace _Scripts.LSO.Data
 {
     public class LSO_Ore : MonoBehaviour, LSO_IMinerable
     {
+        private const float PlaceholderCubeScale = 0.12f;
+
         public LSO_OreSO oreSO;
 
         private MeshRenderer _meshRenderer;
+        private bool _breakFeedbackPending;
+        private GameObject _pendingExplosionPrefab;
+        private Vector3 _pendingOrigin;
+        private Vector3 _pendingChunkScale;
+        private float _pendingExplosionLifetime;
+        private float _pendingExplosionScale;
+        private float _pendingPurity;
+        private bool _pendingScorched;
+        private int _pendingMineralAmount;
+        private int _pendingMaximumChunks;
+        private float _pendingMinimumScatterDistance;
+        private float _pendingMaximumScatterDistance;
+        private float _pendingScatterDuration;
+        private int _pendingLayer;
+
+        public bool BreakFeedbackPlayedLastMine { get; private set; }
 
         private void Awake()
         {
@@ -53,6 +72,7 @@ namespace _Scripts.LSO.Data
         [ContextMenu("Mine")]
         public LSO_MineralSO Mine()
         {
+            BreakFeedbackPlayedLastMine = false;
             if (oreSO == null || oreSO.mineral == null)
             {
                 Debug.LogWarning($"[LSO_Ore] '{name}' 에서 채굴할 광물 정보가 없습니다.", this);
@@ -61,8 +81,140 @@ namespace _Scripts.LSO.Data
 
             LSO_MineralSO mineral = oreSO.mineral;
             Debug.Log($"{mineral.mineralType}을(를) 채굴하여 {mineral.mineralPrice}를 얻었습니다!", this);
+            PlayConfiguredBreakFeedback();
 
             return mineral;
+        }
+
+        public void ConfigureBreakFeedback(
+            GameObject explosionPrefab,
+            Vector3 origin,
+            float explosionLifetime,
+            float explosionScale,
+            int mineralAmount,
+            int maximumChunks,
+            Vector3 chunkScale,
+            float purity,
+            bool scorched,
+            float minimumScatterDistance,
+            float maximumScatterDistance,
+            float scatterDuration,
+            int targetLayer)
+        {
+            _breakFeedbackPending = true;
+            _pendingExplosionPrefab = explosionPrefab;
+            _pendingOrigin = origin;
+            _pendingExplosionLifetime = Mathf.Max(0.1f, explosionLifetime);
+            _pendingExplosionScale = Mathf.Max(0.01f, explosionScale);
+            _pendingMineralAmount = Mathf.Max(1, mineralAmount);
+            _pendingMaximumChunks = Mathf.Max(1, maximumChunks);
+            _pendingChunkScale = new Vector3(
+                Mathf.Max(0.01f, Mathf.Abs(chunkScale.x)),
+                Mathf.Max(0.01f, Mathf.Abs(chunkScale.y)),
+                Mathf.Max(0.01f, Mathf.Abs(chunkScale.z)));
+            _pendingPurity = Mathf.Clamp01(purity);
+            _pendingScorched = scorched;
+            _pendingMinimumScatterDistance = Mathf.Max(0f, minimumScatterDistance);
+            _pendingMaximumScatterDistance = Mathf.Max(
+                _pendingMinimumScatterDistance,
+                maximumScatterDistance);
+            _pendingScatterDuration = Mathf.Max(0.05f, scatterDuration);
+            _pendingLayer = targetLayer;
+        }
+
+        public bool PlayConfiguredBreakFeedback()
+        {
+            if (!_breakFeedbackPending)
+                return false;
+
+            _breakFeedbackPending = false;
+            BreakFeedbackPlayedLastMine = true;
+            SpawnExplosion();
+            int spawnedCubeCount = SpawnLooseOreCubes();
+            Debug.Log(
+                $"[LSO_Ore] 폭발 VFX와 원석 큐브 {spawnedCubeCount}개를 생성했습니다.",
+                this);
+            return true;
+        }
+
+        private void SpawnExplosion()
+        {
+            if (_pendingExplosionPrefab == null)
+            {
+                Debug.LogWarning("[LSO_Ore] 폭발 VFX 프리팹이 지정되지 않았습니다.", this);
+                return;
+            }
+
+            GameObject effect = Instantiate(
+                _pendingExplosionPrefab,
+                _pendingOrigin,
+                Random.rotation);
+            effect.transform.localScale *= _pendingExplosionScale;
+            foreach (ParticleSystem particle in effect.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                particle.gameObject.SetActive(true);
+                particle.Clear(true);
+                particle.Play(true);
+            }
+
+            Destroy(effect, _pendingExplosionLifetime);
+        }
+
+        private int SpawnLooseOreCubes()
+        {
+            int chunkCount = Mathf.Clamp(
+                _pendingMineralAmount,
+                1,
+                _pendingMaximumChunks);
+
+            for (int i = 0; i < chunkCount; i++)
+            {
+                int representedAmount = _pendingMineralAmount / chunkCount +
+                                        (i < _pendingMineralAmount % chunkCount ? 1 : 0);
+                GameObject mineralPrefab = oreSO.mineral != null
+                    ? oreSO.mineral.mineralPrefab
+                    : null;
+                bool usesMineralPrefab = mineralPrefab != null;
+                GameObject looseObject = usesMineralPrefab
+                    ? Instantiate(mineralPrefab)
+                    : GameObject.CreatePrimitive(PrimitiveType.Cube);
+                looseObject.name = usesMineralPrefab
+                    ? $"{oreSO.mineral.mineralName} One {i + 1}"
+                    : $"{name} One Cube {i + 1}";
+                looseObject.transform.SetPositionAndRotation(_pendingOrigin, Random.rotation);
+                looseObject.transform.localScale = usesMineralPrefab
+                    ? Vector3.Scale(mineralPrefab.transform.localScale, _pendingChunkScale)
+                    : Vector3.one * PlaceholderCubeScale;
+                looseObject.tag = "One";
+                looseObject.layer = _pendingLayer;
+
+                Renderer looseRenderer = looseObject.GetComponentInChildren<Renderer>(true);
+                if (!usesMineralPrefab && looseRenderer != null && oreSO.oreMaterial != null)
+                    looseRenderer.sharedMaterial = oreSO.oreMaterial;
+
+                if (looseObject.GetComponentInChildren<Collider>(true) == null)
+                    looseObject.AddComponent<BoxCollider>();
+
+                LSO_Ore looseOre = looseObject.GetComponent<LSO_Ore>() ??
+                                   looseObject.GetComponentInChildren<LSO_Ore>(true) ??
+                                   looseObject.AddComponent<LSO_Ore>();
+                looseOre.oreSO = oreSO;
+
+                MineableAsteroid looseTarget = looseObject.GetComponent<MineableAsteroid>() ??
+                                               looseObject.AddComponent<MineableAsteroid>();
+                looseTarget.InitializeAsLooseMineral(
+                    oreSO,
+                    representedAmount,
+                    _pendingPurity,
+                    _pendingScorched);
+                looseTarget.LaunchInSpace(
+                    Random.onUnitSphere,
+                    _pendingMinimumScatterDistance,
+                    _pendingMaximumScatterDistance,
+                    _pendingScatterDuration);
+            }
+
+            return chunkCount;
         }
 
 #if UNITY_EDITOR

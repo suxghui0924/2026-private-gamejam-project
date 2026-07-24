@@ -15784,14 +15784,15 @@ MonoBehaviour:
     - {fileID: 3988923661172133211}
     - {fileID: 5012693956086286711}
     lockedRootCount: 1
-    maxJointAngle: 20
-    rootJointShare: 0.35
+    maxJointAngle: 65
+    rootJointShare: 0.7
     aimOffsetDegrees: {x: 0, y: 0}
     responseMultiplier: 1
     forcedCurlAxis: {x: 1, y: 0, z: 0}
     forcedCurlDegrees: 0
   drillSurfaceOffset: 0.05
-  drillMountMaxAngle: 85
+  drillMinimumStretch: 1
+  drillMaximumStretch: 3.5
   laserRoot: {fileID: 543450652092076988}
   laserMuzzle: {fileID: 6645823806249987686}
   projectileSpeed: 90
