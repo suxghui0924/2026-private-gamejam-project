@@ -19,6 +19,7 @@ namespace _Scripts.LHS.SoundManager
         public bool looping;
 
         [Header("Pitch")]
+        [Range(-3f, 3f)]
         public float pitch = 1f;
         public bool randomizePitch;
         public Vector2 pitchRange = new Vector2(0.95f, 1.05f);

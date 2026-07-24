@@ -19,6 +19,15 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 0cc263650ca79b248ab227c47c8bf9d1, type: 3}
     volume: 1
     looping: 1
-    pitch: 0
+    pitch: 1
     randomizePitch: 0
     pitchRange: {x: 0, y: 0}
+  - soundID: Click01
+    type: 1
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: fd7903caae6971643b6d7469d6a1a5f5, type: 3}
+    volume: 1
+    looping: 0
+    pitch: 1
+    randomizePitch: 1
+    pitchRange: {x: 0.95, y: 1.05}
