@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
+using _Scripts.LSO.Data;
 
 namespace _Scripts.Suxghui.Manager.Module
 {
     public sealed class InventoryModule
     {
-        private readonly Dictionary<string, int> _items = new Dictionary<string, int>();
+        private readonly Dictionary<LSO_MineralSO, int> _items = new Dictionary<LSO_MineralSO, int>();
 
-        public event Action<string, int> ItemChanged;
+        public event Action<LSO_MineralSO, int> ItemChanged;
 
         public InventoryModule(InventoryItemSaveData[] savedItems)
         {
@@ -18,21 +19,21 @@ namespace _Scripts.Suxghui.Manager.Module
                 AddItem(item.itemId, item.amount, false);
         }
 
-        public int GetItemAmount(string itemId)
+        public int GetItemAmount(LSO_MineralSO itemId)
         {
-            return !string.IsNullOrWhiteSpace(itemId) && _items.TryGetValue(itemId, out int amount)
+            return itemId && _items.TryGetValue(itemId, out int amount)
                 ? amount
                 : 0;
         }
 
-        public void AddItem(string itemId, int amount)
+        public void AddItem(LSO_MineralSO itemId, int amount)
         {
             AddItem(itemId, amount, true);
         }
 
-        public bool TryRemoveItem(string itemId, int amount)
+        public bool TryRemoveItem(LSO_MineralSO itemId, int amount)
         {
-            if (string.IsNullOrWhiteSpace(itemId) || amount <= 0 || GetItemAmount(itemId) < amount)
+            if (!itemId || amount <= 0 || GetItemAmount(itemId) < amount)
                 return false;
 
             _items[itemId] -= amount;
@@ -48,7 +49,7 @@ namespace _Scripts.Suxghui.Manager.Module
             InventoryItemSaveData[] result = new InventoryItemSaveData[_items.Count];
             int index = 0;
 
-            foreach (KeyValuePair<string, int> item in _items)
+            foreach (KeyValuePair<LSO_MineralSO, int> item in _items)
                 result[index++] = new InventoryItemSaveData(item.Key, item.Value);
 
             return result;
@@ -56,16 +57,16 @@ namespace _Scripts.Suxghui.Manager.Module
 
         public void Clear()
         {
-            string[] itemIds = new string[_items.Count];
+            LSO_MineralSO[] itemIds = new LSO_MineralSO[_items.Count];
             _items.Keys.CopyTo(itemIds, 0);
 
-            foreach (string itemId in itemIds)
+            foreach (LSO_MineralSO itemId in itemIds)
                 TryRemoveItem(itemId, GetItemAmount(itemId));
         }
 
-        private void AddItem(string itemId, int amount, bool notify)
+        private void AddItem(LSO_MineralSO itemId, int amount, bool notify)
         {
-            if (string.IsNullOrWhiteSpace(itemId) || amount <= 0)
+            if (!itemId || amount <= 0)
                 return;
 
             _items.TryGetValue(itemId, out int currentAmount);

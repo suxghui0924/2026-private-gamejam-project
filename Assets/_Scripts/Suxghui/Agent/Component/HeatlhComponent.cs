@@ -9,11 +9,9 @@ namespace _Scripts.Suxghui.Agent.Component
         public NotifyValue<int> health = new NotifyValue<int>(0);
         public event Action<bool> OnDeadInvoke;
 
-        public bool CurrentHeartbeat { get; private set; } = true;
-        
-        [SerializeField, Min(1)] private int MAXHEALTH = 100;
+        public bool currentHeartbeat = true;
 
-        public int MaxHealth => MAXHEALTH;
+        public int MAXHEALTH { get; private set; } = 100;
 
         private void Awake()
         {
@@ -22,26 +20,13 @@ namespace _Scripts.Suxghui.Agent.Component
 
         public void GetDamage(int damage)
         {
-            if (damage <= 0)
-                return;
-
-            health.Value = Mathf.Clamp(health.Value - damage, 0, MAXHEALTH);
+            health.Value -= Mathf.Clamp(health.Value - damage, 0, MAXHEALTH);
             CheckHeartBeat();
         }
 
         public void HealDamage(int amount)
         {
-            if (amount <= 0)
-                return;
-
-            health.Value = Mathf.Clamp(health.Value + amount, 0, MAXHEALTH);
-            CheckHeartBeat();
-        }
-
-        public void SetHealthState(int currentHealth, int maxHealth)
-        {
-            MAXHEALTH = Mathf.Max(1, maxHealth);
-            health.Value = Mathf.Clamp(currentHealth, 0, MAXHEALTH);
+            health.Value += Mathf.Clamp(health.Value + amount, 0, MAXHEALTH);
             CheckHeartBeat();
         }
 
@@ -50,13 +35,20 @@ namespace _Scripts.Suxghui.Agent.Component
             if (health.Value <= 0)
                 Dead();
             else
-                CurrentHeartbeat = true;
+                currentHeartbeat = true;
+        }
+        
+        public void SetHealthState(int currentHealth, int maxHealth)
+        {
+            MAXHEALTH = Mathf.Max(1, maxHealth);
+            health.Value = Mathf.Clamp(currentHealth, 0, MAXHEALTH);
+            CheckHeartBeat();
         }
 
         private void Dead()
         {
             OnDeadInvoke?.Invoke(true);
-            CurrentHeartbeat = false;
+            currentHeartbeat = false;
         }
     }
 }
