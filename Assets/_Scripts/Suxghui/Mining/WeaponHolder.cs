@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using _Scripts.LSO.Data;
 using _Scripts.Suxghui.Manager;
 using _Scripts.Suxghui.Manager.Module;
 using _Scripts.Suxghui.Player;
@@ -25,8 +26,17 @@ namespace _Scripts.Suxghui.Mining
             [SerializeField, Range(-45f, 45f)] private float forcedCurlDegrees;
             private Quaternion[] _baseLocalRotations;
             private Vector3[] _baseLocalPositions;
+            private Vector3 _baseAnchorLocalPosition;
+            private Quaternion _baseAnchorLocalRotation;
+            private bool _hasBaseAnchorPose;
 
             public float ResponseMultiplier => responseMultiplier;
+            public bool IsValid => bones != null && bones.Length >= 2 && bones[0] != null && bones[^1] != null;
+            public Vector3 RootPosition => IsValid ? bones[0].position : Vector3.zero;
+            public Vector3 EndPosition => IsValid ? bones[^1].position : Vector3.zero;
+            public Quaternion BaseAnchorLocalRotation => _baseAnchorLocalRotation;
+
+            private Transform Anchor => IsValid ? bones[0].parent : null;
 
             public void CapturePose()
             {
@@ -39,6 +49,14 @@ namespace _Scripts.Suxghui.Mining
                         _baseLocalRotations[i] = bones[i].localRotation;
                         _baseLocalPositions[i] = bones[i].localPosition;
                     }
+                }
+
+                Transform anchor = Anchor;
+                if (anchor != null)
+                {
+                    _baseAnchorLocalPosition = anchor.localPosition;
+                    _baseAnchorLocalRotation = anchor.localRotation;
+                    _hasBaseAnchorPose = true;
                 }
             }
 
@@ -60,6 +78,108 @@ namespace _Scripts.Suxghui.Mining
                             : Quaternion.Slerp(bones[i].localRotation, _baseLocalRotations[i], blend);
                     }
                 }
+            }
+
+            public void RestoreAnchor(float blend)
+            {
+                Transform anchor = Anchor;
+                if (anchor == null)
+                    return;
+                if (!_hasBaseAnchorPose)
+                    CapturePose();
+
+                anchor.localPosition = Vector3.Lerp(anchor.localPosition, _baseAnchorLocalPosition, blend);
+                anchor.localRotation = Quaternion.Slerp(anchor.localRotation, _baseAnchorLocalRotation, blend);
+            }
+
+            public void AimAnchorAt(Vector3 targetPoint, float weight)
+            {
+                Transform anchor = Anchor;
+                if (anchor == null || weight <= 0f)
+                    return;
+
+                Vector3 fixedRootPosition = RootPosition;
+                Vector3 currentDirection = EndPosition - fixedRootPosition;
+                Vector3 targetDirection = targetPoint - fixedRootPosition;
+                if (currentDirection.sqrMagnitude < 0.000001f || targetDirection.sqrMagnitude < 0.000001f)
+                    return;
+
+                Quaternion targetRotation = Quaternion.FromToRotation(currentDirection, targetDirection) * anchor.rotation;
+                anchor.rotation = Quaternion.Slerp(anchor.rotation, targetRotation, Mathf.Clamp01(weight));
+                anchor.position += fixedRootPosition - RootPosition;
+            }
+
+            public void AimRootBoneAt(Vector3 targetPoint, float weight, float maximumAngle)
+            {
+                if (!IsValid || _baseLocalRotations == null || _baseLocalRotations.Length != bones.Length ||
+                    weight <= 0f)
+                    return;
+
+                Transform root = bones[0];
+                Vector3 toEnd = EndPosition - root.position;
+                Vector3 toTarget = targetPoint - root.position;
+                if (toEnd.sqrMagnitude < 0.000001f || toTarget.sqrMagnitude < 0.000001f)
+                    return;
+
+                Quaternion solvedWorldRotation = Quaternion.FromToRotation(toEnd, toTarget) * root.rotation;
+                Quaternion parentRotation = root.parent != null ? root.parent.rotation : Quaternion.identity;
+                Quaternion solvedLocalRotation = Quaternion.Inverse(parentRotation) * solvedWorldRotation;
+                Quaternion localDelta = Quaternion.Inverse(_baseLocalRotations[0]) * solvedLocalRotation;
+                localDelta.ToAngleAxis(out float angle, out Vector3 axis);
+                if (angle > 180f)
+                {
+                    angle = 360f - angle;
+                    axis = -axis;
+                }
+
+                float limitedAngle = Mathf.Min(angle, Mathf.Max(0f, maximumAngle));
+                Quaternion targetLocalRotation = _baseLocalRotations[0] *
+                                                 Quaternion.AngleAxis(limitedAngle, axis);
+                root.localRotation = Quaternion.Slerp(
+                    root.localRotation,
+                    targetLocalRotation,
+                    Mathf.Clamp01(weight));
+            }
+
+            public void StretchToTarget(Vector3 targetPoint, float minimumStretch, float maximumStretch, float weight)
+            {
+                if (!IsValid || _baseLocalPositions == null || _baseLocalPositions.Length != bones.Length || weight <= 0f)
+                    return;
+
+                float restLength = 0f;
+                for (int i = 0; i < bones.Length - 1; i++)
+                {
+                    if (bones[i] != null && bones[i + 1] != null)
+                        restLength += Vector3.Distance(bones[i].position, bones[i + 1].position);
+                }
+
+                if (restLength < 0.0001f)
+                    return;
+
+                float targetDistance = Vector3.Distance(RootPosition, targetPoint);
+                float desiredStretch = Mathf.Clamp(
+                    targetDistance / restLength,
+                    Mathf.Max(0.1f, minimumStretch),
+                    Mathf.Max(minimumStretch, maximumStretch));
+                float appliedStretch = Mathf.Lerp(1f, desiredStretch, Mathf.Clamp01(weight));
+
+                // Every segment grows by the same ratio, so the skinned boom remains continuous.
+                for (int i = 1; i < bones.Length; i++)
+                {
+                    if (bones[i] != null)
+                        bones[i].localPosition = _baseLocalPositions[i] * appliedStretch;
+                }
+            }
+
+            public void FollowRoot(Vector3 targetRootPosition, Quaternion targetAnchorLocalRotation, float weight)
+            {
+                Transform anchor = Anchor;
+                if (anchor == null || weight <= 0f)
+                    return;
+
+                weight = Mathf.Clamp01(weight);
+                anchor.localRotation = Quaternion.Slerp(anchor.localRotation, targetAnchorLocalRotation, weight);
+                anchor.position += (targetRootPosition - RootPosition) * weight;
             }
 
             public void Solve(Vector3 targetPoint, float weight)
@@ -143,7 +263,7 @@ namespace _Scripts.Suxghui.Mining
                     bones[i].localRotation = Quaternion.Slerp(
                         bones[i].localRotation,
                         curledRotation,
-                        Mathf.Clamp01(responseMultiplier * weight * 0.6f));
+                        Mathf.Clamp01(responseMultiplier * weight));
                 }
             }
         }
@@ -153,10 +273,15 @@ namespace _Scripts.Suxghui.Mining
         [SerializeField] private CrossHairComponent crossHair;
         [SerializeField] private MovmentComponent movementComponent;
         [SerializeField] private bool autoCreateMineableTargets = true;
+        [SerializeField] private LSO_OreSO defaultOreDefinition;
+        [SerializeField] private LSO_MineralSO defaultStoneMineral;
+        [SerializeField] private LSO_MineralSO defaultScorchedMineral;
 
         [Header("Drill")]
         [SerializeField] private Transform drillRoot;
         [SerializeField] private ProceduralIkChain drillChain = new ProceduralIkChain();
+        [SerializeField, Min(0f)] private float drillSurfaceOffset = 0.05f;
+        [SerializeField, Range(1f, 120f)] private float drillMountMaxAngle = 85f;
 
         [Header("Laser")]
         [SerializeField] private Transform laserRoot;
@@ -168,6 +293,10 @@ namespace _Scripts.Suxghui.Mining
         [Header("Extractor Tongs")]
         [SerializeField] private Transform extractorRoot;
         [SerializeField] private ProceduralIkChain[] extractorChains = Array.Empty<ProceduralIkChain>();
+        [SerializeField, Min(0)] private int extractorBoomChainIndex = 1;
+        [SerializeField, Range(0.25f, 1f)] private float extractorMinimumStretch = 0.65f;
+        [SerializeField, Range(1f, 5f)] private float extractorMaximumStretch = 3.25f;
+        [SerializeField, Min(0f)] private float extractorSurfaceOffset = 0.15f;
 
         [Header("Feedback")]
         [SerializeField] private Color readyColor = new Color(0.2f, 1f, 0.72f, 1f);
@@ -188,9 +317,14 @@ namespace _Scripts.Suxghui.Mining
         private float _actionTimer;
         private bool _fireHeld;
         private bool _targetInRange;
+        private bool _targetCanMine;
         private LineRenderer _beam;
         private bool _upgradeModulesSubscribed;
         private GameManager _upgradeManager;
+        private Vector3 _extractorBoomBaseDirectionLocal;
+        private Vector3[] _extractorJawRootOffsetsLocal = Array.Empty<Vector3>();
+        private Quaternion[] _extractorJawBaseAnchorRotations = Array.Empty<Quaternion>();
+        private bool _extractorRigCaptured;
 
         public MiningTechDefinitionSO CurrentWeapon => _currentDefinition;
         public MiningTechType CurrentType => _currentType;
@@ -313,6 +447,7 @@ namespace _Scripts.Suxghui.Mining
             if (_currentDefinition != null)
                 _currentStats = _currentDefinition.GetStats(CurrentLevel);
 
+            _targetCanMine = false;
             if (crossHair == null || !crossHair.HasTarget || crossHair.TargetCollider == null)
             {
                 _targetInRange = false;
@@ -320,6 +455,18 @@ namespace _Scripts.Suxghui.Mining
             }
 
             _targetInRange = Vector3.Distance(transform.position, crossHair.TargetPoint) <= _currentStats.Range;
+            if (!_targetInRange)
+                return;
+
+            if (_currentType == MiningTechType.Laser)
+            {
+                _targetCanMine = true;
+                return;
+            }
+
+            MineableAsteroid target = ResolveMineableTarget(crossHair.TargetCollider);
+            _targetCanMine = target != null &&
+                             target.ValidateMining(_currentType, _currentStats) == MiningFailureReason.None;
         }
 
         private void UpdateFeedback()
@@ -341,14 +488,7 @@ namespace _Scripts.Suxghui.Mining
                 return;
             }
 
-            bool canMine = _targetInRange;
-            if (canMine)
-            {
-                MineableAsteroid target = ResolveMineableTarget(crossHair.TargetCollider);
-                canMine = target != null && target.ValidateMining(_currentType, _currentStats) == MiningFailureReason.None;
-            }
-
-            Color statusColor = canMine ? readyColor : outOfRangeColor;
+            Color statusColor = _targetCanMine ? readyColor : outOfRangeColor;
             crossHair.SetStatusColor(statusColor);
             ApplyWeaponTint(_currentType == MiningTechType.Drill ? drillRoot : extractorRoot, statusColor);
         }
@@ -371,7 +511,7 @@ namespace _Scripts.Suxghui.Mining
 
         private void UpdateCloseRangeMining(MiningTechType type)
         {
-            bool canUse = _fireHeld && _targetInRange && crossHair != null && crossHair.TargetCollider != null;
+            bool canUse = _fireHeld && _targetCanMine && crossHair != null && crossHair.TargetCollider != null;
             if (!canUse || _actionTimer > 0f)
                 return;
 
@@ -422,7 +562,7 @@ namespace _Scripts.Suxghui.Mining
             if (drillRoot == null)
                 return;
 
-            float targetWeight = _currentType == MiningTechType.Drill && _fireHeld && _targetInRange ? 1f : 0f;
+            float targetWeight = _currentType == MiningTechType.Drill && _fireHeld && _targetCanMine ? 1f : 0f;
             _drillUseWeight = Damp(_drillUseWeight, targetWeight);
             drillRoot.localPosition = Vector3.Lerp(
                 drillRoot.localPosition,
@@ -430,9 +570,16 @@ namespace _Scripts.Suxghui.Mining
                 FrameBlend());
             drillRoot.localScale = _drillBaseLocalScale * _currentStats.VisualScaleMultiplier;
 
-            drillChain.RestorePose(FrameBlend());
-            if (_currentType == MiningTechType.Drill && crossHair != null && _drillUseWeight > 0.001f)
-                drillChain.Solve(crossHair.TargetPoint, 0.45f * _drillUseWeight);
+            float poseBlend = FrameBlend();
+            drillChain.RestorePose(poseBlend);
+            drillChain.RestoreAnchor(1f);
+            if (_currentType != MiningTechType.Drill || crossHair == null ||
+                !_targetCanMine || _drillUseWeight <= 0.001f || !drillChain.IsValid)
+                return;
+
+            Vector3 targetPoint = GetToolSurfacePoint(drillChain.RootPosition, drillSurfaceOffset);
+            drillChain.AimRootBoneAt(targetPoint, _drillUseWeight, drillMountMaxAngle);
+            drillChain.Solve(targetPoint, 0.35f * _drillUseWeight);
         }
 
         private void AnimateExtractor()
@@ -440,31 +587,123 @@ namespace _Scripts.Suxghui.Mining
             if (extractorRoot == null)
                 return;
 
-            float targetWeight = _currentType == MiningTechType.Extractor && _fireHeld && _targetInRange ? 1f : 0f;
+            bool shouldReach = _currentType == MiningTechType.Extractor && _fireHeld && _targetCanMine &&
+                               crossHair != null && crossHair.HasTarget;
+            float targetWeight = shouldReach ? 1f : 0f;
             _extractorUseWeight = Damp(_extractorUseWeight, targetWeight);
             extractorRoot.localPosition = Vector3.Lerp(
                 extractorRoot.localPosition,
                 _extractorBaseLocalPosition,
                 FrameBlend());
 
+            float poseBlend = FrameBlend();
             for (int i = 0; i < extractorChains.Length; i++)
             {
                 ProceduralIkChain chain = extractorChains[i];
-                chain?.RestorePose(FrameBlend());
-                if (chain == null || _currentType != MiningTechType.Extractor ||
-                    crossHair == null || _extractorUseWeight <= 0.001f)
+                chain?.RestorePose(poseBlend);
+                chain?.RestoreAnchor(poseBlend);
+            }
+
+            if (_currentType != MiningTechType.Extractor || crossHair == null ||
+                _extractorUseWeight <= 0.001f || !TryGetExtractorBoom(out ProceduralIkChain boom))
+                return;
+
+            if (!_extractorRigCaptured)
+                CaptureExtractorRig();
+            if (!_extractorRigCaptured)
+                return;
+
+            Vector3 targetPoint = GetExtractorTargetPoint(boom.RootPosition);
+            float reachWeight = Mathf.Clamp01(_extractorUseWeight * 1.35f);
+            boom.AimAnchorAt(targetPoint, reachWeight);
+            boom.StretchToTarget(
+                targetPoint,
+                extractorMinimumStretch,
+                extractorMaximumStretch,
+                reachWeight);
+
+            Vector3 boomDirectionLocal = extractorRoot.InverseTransformDirection(
+                (boom.EndPosition - boom.RootPosition).normalized);
+            Quaternion boomRotationDelta = Quaternion.FromToRotation(
+                _extractorBoomBaseDirectionLocal,
+                boomDirectionLocal);
+
+            for (int i = 0; i < extractorChains.Length; i++)
+            {
+                if (i == extractorBoomChainIndex)
                     continue;
 
-                Vector3 targetPoint = crossHair.TargetCollider != null
-                    ? crossHair.TargetCollider.bounds.center
-                    : crossHair.TargetPoint;
-                Camera gameplayCamera = Camera.main;
-                Vector3 yawAxis = gameplayCamera != null ? gameplayCamera.transform.up : transform.up;
-                Vector3 pitchAxis = gameplayCamera != null ? gameplayCamera.transform.right : transform.right;
-                targetPoint = chain.GetBiasedTarget(targetPoint, yawAxis, pitchAxis);
-                chain.Solve(targetPoint, 0.35f * chain.ResponseMultiplier * _extractorUseWeight);
-                chain.ApplyForcedCurl(_extractorUseWeight);
+                ProceduralIkChain jaw = extractorChains[i];
+                if (jaw == null || !jaw.IsValid)
+                    continue;
+
+                Vector3 targetJawRoot = boom.EndPosition + extractorRoot.TransformVector(
+                    boomRotationDelta * _extractorJawRootOffsetsLocal[i]);
+                Quaternion targetJawRotation = boomRotationDelta * _extractorJawBaseAnchorRotations[i];
+                jaw.FollowRoot(targetJawRoot, targetJawRotation, reachWeight);
+                jaw.ApplyForcedCurl(_targetCanMine ? _extractorUseWeight : 0f);
             }
+        }
+
+        private bool TryGetExtractorBoom(out ProceduralIkChain boom)
+        {
+            boom = null;
+            if (extractorChains == null || extractorChains.Length == 0)
+                return false;
+
+            int index = Mathf.Clamp(extractorBoomChainIndex, 0, extractorChains.Length - 1);
+            boom = extractorChains[index];
+            return boom != null && boom.IsValid;
+        }
+
+        private void CaptureExtractorRig()
+        {
+            _extractorRigCaptured = false;
+            if (extractorRoot == null || !TryGetExtractorBoom(out ProceduralIkChain boom))
+                return;
+
+            Vector3 baseDirection = boom.EndPosition - boom.RootPosition;
+            if (baseDirection.sqrMagnitude < 0.000001f)
+                return;
+
+            _extractorBoomBaseDirectionLocal = extractorRoot.InverseTransformDirection(baseDirection.normalized);
+            _extractorJawRootOffsetsLocal = new Vector3[extractorChains.Length];
+            _extractorJawBaseAnchorRotations = new Quaternion[extractorChains.Length];
+
+            for (int i = 0; i < extractorChains.Length; i++)
+            {
+                ProceduralIkChain jaw = extractorChains[i];
+                if (i == extractorBoomChainIndex || jaw == null || !jaw.IsValid)
+                    continue;
+
+                _extractorJawRootOffsetsLocal[i] = extractorRoot.InverseTransformVector(
+                    jaw.RootPosition - boom.EndPosition);
+                _extractorJawBaseAnchorRotations[i] = jaw.BaseAnchorLocalRotation;
+            }
+
+            _extractorRigCaptured = true;
+        }
+
+        private Vector3 GetExtractorTargetPoint(Vector3 boomRootPosition)
+        {
+            return GetToolSurfacePoint(boomRootPosition, extractorSurfaceOffset);
+        }
+
+        private Vector3 GetToolSurfacePoint(Vector3 toolRootPosition, float surfaceOffset)
+        {
+            Vector3 targetPoint = crossHair.TargetPoint;
+            Collider targetCollider = crossHair.TargetCollider;
+            if (targetCollider != null)
+            {
+                Vector3 surfacePoint = targetCollider.ClosestPoint(toolRootPosition);
+                if ((surfacePoint - toolRootPosition).sqrMagnitude > 0.0001f)
+                    targetPoint = surfacePoint;
+            }
+
+            Vector3 surfaceNormal = toolRootPosition - targetPoint;
+            if (surfaceNormal.sqrMagnitude > 0.0001f)
+                targetPoint += surfaceNormal.normalized * surfaceOffset;
+            return targetPoint;
         }
 
         private void ApplyMining(
@@ -486,8 +725,22 @@ namespace _Scripts.Suxghui.Mining
                 return null;
 
             MineableAsteroid target = targetCollider.GetComponentInParent<MineableAsteroid>();
+            LSO_Ore ore = targetCollider.GetComponentInParent<LSO_Ore>() ??
+                          targetCollider.GetComponentInChildren<LSO_Ore>(true);
+
             if (target == null && autoCreateMineableTargets)
-                target = targetCollider.gameObject.AddComponent<MineableAsteroid>();
+            {
+                if (ore == null && defaultOreDefinition != null)
+                {
+                    ore = targetCollider.gameObject.AddComponent<LSO_Ore>();
+                    ore.oreSO = defaultOreDefinition;
+                }
+
+                if (ore != null)
+                    target = ore.gameObject.AddComponent<MineableAsteroid>();
+            }
+
+            target?.ConfigureOre(ore, defaultStoneMineral, defaultScorchedMineral);
             return target;
         }
 
@@ -514,6 +767,7 @@ namespace _Scripts.Suxghui.Mining
             drillChain.CapturePose();
             foreach (ProceduralIkChain chain in extractorChains)
                 chain?.CapturePose();
+            CaptureExtractorRig();
         }
 
         private void ApplyMovementPenalty()

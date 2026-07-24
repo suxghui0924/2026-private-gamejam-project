@@ -63,7 +63,7 @@ namespace _Scripts.Suxghui.Player
 
             if (PlayerInput == null)
                 return;
-
+            
             PlayerInput.OnMoveKeyPress += HandleMoveKeyPress;
             PlayerInput.OnFlyKeyPress += HandleFlyKeyPress;
             PlayerInput.OnBoosterPress += HandleBoosterPress;
@@ -71,7 +71,13 @@ namespace _Scripts.Suxghui.Player
 
         private void Update()
         {
-            if (!HealthComponent.CurrentHeartbeat) return;
+            if (!HealthComponent.CurrentHeartbeat)
+            {
+                if (_cursorLocked)
+                    SetCursorLocked(false);
+                return;
+            }
+
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
                 SetCursorLocked(false);
 

@@ -15773,6 +15773,9 @@ MonoBehaviour:
   crossHair: {fileID: 1410068603}
   movementComponent: {fileID: 1174217702}
   autoCreateMineableTargets: 1
+  defaultOreDefinition: {fileID: 11400000, guid: b780d74ab53bfab40b3f3b322ac5e609, type: 2}
+  defaultStoneMineral: {fileID: 11400000, guid: d11aa6f8e1204115b1d6bccf8739ea2e, type: 2}
+  defaultScorchedMineral: {fileID: 11400000, guid: d22bf99ed66d4ba7a61abbf53eb2ae86, type: 2}
   drillRoot: {fileID: 543450653056336359}
   drillChain:
     bones:
@@ -15787,6 +15790,8 @@ MonoBehaviour:
     responseMultiplier: 1
     forcedCurlAxis: {x: 1, y: 0, z: 0}
     forcedCurlDegrees: 0
+  drillSurfaceOffset: 0.05
+  drillMountMaxAngle: 85
   laserRoot: {fileID: 543450652092076988}
   laserMuzzle: {fileID: 6645823806249987686}
   projectileSpeed: 90
@@ -15803,9 +15808,9 @@ MonoBehaviour:
     maxJointAngle: 16
     rootJointShare: 0.4
     aimOffsetDegrees: {x: 0, y: 0}
-    responseMultiplier: 1
+    responseMultiplier: 1.8
     forcedCurlAxis: {x: 1, y: 0, z: 0}
-    forcedCurlDegrees: 0
+    forcedCurlDegrees: 42
   - bones:
     - {fileID: 5934097671258495833}
     - {fileID: 7325583671886090612}
@@ -15815,9 +15820,9 @@ MonoBehaviour:
     maxJointAngle: 24
     rootJointShare: 0.55
     aimOffsetDegrees: {x: 8, y: -6}
-    responseMultiplier: 1.6
+    responseMultiplier: 1
     forcedCurlAxis: {x: 1, y: 0, z: 0}
-    forcedCurlDegrees: 18
+    forcedCurlDegrees: 0
   - bones:
     - {fileID: 5336902550646990279}
     - {fileID: 5797454438459388347}
@@ -15827,9 +15832,13 @@ MonoBehaviour:
     maxJointAngle: 16
     rootJointShare: 0.4
     aimOffsetDegrees: {x: 0, y: 0}
-    responseMultiplier: 1
+    responseMultiplier: 1.8
     forcedCurlAxis: {x: 1, y: 0, z: 0}
-    forcedCurlDegrees: 0
+    forcedCurlDegrees: -42
+  extractorBoomChainIndex: 1
+  extractorMinimumStretch: 0.65
+  extractorMaximumStretch: 3.25
+  extractorSurfaceOffset: 0.15
   readyColor: {r: 0.2, g: 1, b: 0.72, a: 1}
   outOfRangeColor: {r: 1, g: 0.2, b: 0.18, a: 1}
   laserColor: {r: 0.25, g: 0.9, b: 1, a: 1}
@@ -22986,11 +22995,11 @@ MonoBehaviour:
   fallbackDistance: 120
   triggerInteraction: 1
   raycastFromCrossHairPosition: 1
-  aimAssistRadius: 1.5
-  nearAimAssistRadius: 4
-  nearAimAssistDistance: 35
-  targetStickDuration: 0.25
-  centerCorrection: 0.75
+  aimAssistRadius: 2.25
+  nearAimAssistRadius: 5
+  nearAimAssistDistance: 45
+  targetStickDuration: 0.18
+  centerCorrection: 0.45
   crossHairSprite: {fileID: 21300000, guid: ef1d843a280a586418ede210d39b3b94, type: 3}
   crossHairSize: {x: 32, y: 32}
   idleColor: {r: 1, g: 1, b: 1, a: 1}

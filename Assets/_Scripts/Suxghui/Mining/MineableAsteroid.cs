@@ -1,4 +1,6 @@
 using System;
+using _Scripts.LSO;
+using _Scripts.LSO.Data;
 using _Scripts.Suxghui.Manager;
 using UnityEngine;
 
@@ -9,13 +11,23 @@ namespace _Scripts.Suxghui.Mining
         None,
         Depleted,
         CoveredMineral,
-        DeepMineral
+        DeepMineral,
+        MissingOreData,
+        InventoryUnavailable,
+        StorageFull
     }
 
     public readonly struct MiningResult
     {
-        public MiningResult(int mineralAmount, int stoneAmount, float purity, bool scorched, MiningFailureReason failure)
+        public MiningResult(
+            LSO_MineralSO mineral,
+            int mineralAmount,
+            int stoneAmount,
+            float purity,
+            bool scorched,
+            MiningFailureReason failure)
         {
+            Mineral = mineral;
             MineralAmount = mineralAmount;
             StoneAmount = stoneAmount;
             Purity = purity;
@@ -23,6 +35,7 @@ namespace _Scripts.Suxghui.Mining
             Failure = failure;
         }
 
+        public LSO_MineralSO Mineral { get; }
         public int MineralAmount { get; }
         public int StoneAmount { get; }
         public float Purity { get; }
@@ -33,10 +46,12 @@ namespace _Scripts.Suxghui.Mining
 
     public sealed class MineableAsteroid : MonoBehaviour
     {
+        [Header("LSO Ore")]
+        [SerializeField] private LSO_Ore oreSource;
+        [SerializeField] private LSO_MineralSO scorchedMineralOverride;
+        [SerializeField] private LSO_MineralSO stoneMineral;
+
         [Header("Deposit")]
-        [SerializeField] private string mineralItemId = "mineral";
-        [SerializeField] private string scorchedMineralItemId = "mineral_scorched";
-        [SerializeField] private string stoneItemId = "stone";
         [SerializeField, Min(1)] private int mineralReserve = 12;
         [SerializeField, Min(0.01f)] private float durabilityPerDrop = 100f;
         [SerializeField, Range(0f, 1f)] private float basePurity = 0.55f;
@@ -47,10 +62,33 @@ namespace _Scripts.Suxghui.Mining
         [SerializeField] private bool deepMineral;
 
         private float _miningProgress;
+        private LSO_PlayerInventory _inventory;
+        private LSO_Weight _cargoWeight;
 
         public int MineralReserve => mineralReserve;
         public bool IsDepleted => mineralReserve <= 0;
+        public LSO_Ore OreSource => oreSource;
         public event Action<MiningResult> Mined;
+
+        private void Awake()
+        {
+            CacheReferences();
+        }
+
+        public void ConfigureOre(
+            LSO_Ore source,
+            LSO_MineralSO stoneByproduct = null,
+            LSO_MineralSO scorchedOverride = null)
+        {
+            if (source != null)
+                oreSource = source;
+            if (stoneByproduct != null)
+                stoneMineral = stoneByproduct;
+            if (scorchedOverride != null)
+                scorchedMineralOverride = scorchedOverride;
+
+            CacheReferences();
+        }
 
         public MiningFailureReason ValidateMining(MiningTechType techType, MiningTechStats stats)
         {
@@ -61,15 +99,13 @@ namespace _Scripts.Suxghui.Mining
         {
             MiningFailureReason failure = ValidateMining(techType, stats);
             if (failure != MiningFailureReason.None)
-                return new MiningResult(0, 0, basePurity, false, failure);
+                return FailedResult(failure);
 
             _miningProgress += stats.DamagePerAction * Mathf.Max(0f, damageMultiplier);
             if (_miningProgress < durabilityPerDrop)
-                return new MiningResult(0, 0, basePurity, false, MiningFailureReason.None);
+                return FailedResult(MiningFailureReason.None);
 
             int completedDrops = Mathf.FloorToInt(_miningProgress / durabilityPerDrop);
-            _miningProgress -= completedDrops * durabilityPerDrop;
-
             int requestedAmount = Mathf.Max(1, Mathf.RoundToInt(completedDrops * stats.YieldMultiplier));
             if (techType == MiningTechType.Extractor)
             {
@@ -83,19 +119,50 @@ namespace _Scripts.Suxghui.Mining
                     requestedAmount = Mathf.Max(requestedAmount, stats.GuaranteedExtractionCount);
             }
 
-            int mineralAmount = Mathf.Min(mineralReserve, requestedAmount);
-            mineralReserve -= mineralAmount;
+            if (!TryResolveInventory())
+                return FailedResult(MiningFailureReason.InventoryUnavailable);
+
+            int availableCapacity = _cargoWeight != null
+                ? _cargoWeight.RemainingCapacity
+                : int.MaxValue;
+            int mineralAmount = Mathf.Min(mineralReserve, requestedAmount, availableCapacity);
+            if (mineralAmount <= 0)
+            {
+                _miningProgress = Mathf.Min(_miningProgress, durabilityPerDrop);
+                return FailedResult(MiningFailureReason.StorageFull);
+            }
+
+            LSO_MineralSO minedMineral = oreSource.Mine();
+            if (minedMineral == null)
+                return FailedResult(MiningFailureReason.MissingOreData);
 
             float purity = Mathf.Clamp01(basePurity + stats.PurityBonus);
             bool scorched = techType == MiningTechType.Laser && UnityEngine.Random.value < stats.ScorchChance;
             int stoneAmount = techType == MiningTechType.Drill
                 ? RollStoneAmount(mineralAmount, stats.StoneRatio)
                 : 0;
+            stoneAmount = stoneMineral != null
+                ? Mathf.Min(stoneAmount, Mathf.Max(0, availableCapacity - mineralAmount))
+                : 0;
 
-            AddToInventory(scorched ? scorchedMineralItemId : mineralItemId, mineralAmount);
-            AddToInventory(stoneItemId, stoneAmount);
+            LSO_MineralSO storedMineral = scorched && scorchedMineralOverride != null
+                ? scorchedMineralOverride
+                : minedMineral;
+            _inventory.AddItem(storedMineral, mineralAmount);
+            if (stoneAmount > 0)
+                _inventory.AddItem(stoneMineral, stoneAmount);
+            _cargoWeight?.AddWeight(mineralAmount + stoneAmount);
 
-            MiningResult result = new MiningResult(mineralAmount, stoneAmount, purity, scorched, MiningFailureReason.None);
+            mineralReserve -= mineralAmount;
+            _miningProgress -= completedDrops * durabilityPerDrop;
+
+            MiningResult result = new MiningResult(
+                storedMineral,
+                mineralAmount,
+                stoneAmount,
+                purity,
+                scorched,
+                MiningFailureReason.None);
             Mined?.Invoke(result);
             return result;
         }
@@ -104,6 +171,8 @@ namespace _Scripts.Suxghui.Mining
         {
             if (IsDepleted)
                 return MiningFailureReason.Depleted;
+            if (oreSource == null || oreSource.oreSO == null || oreSource.oreSO.mineral == null)
+                return MiningFailureReason.MissingOreData;
 
             if (techType != MiningTechType.Extractor)
                 return MiningFailureReason.None;
@@ -125,12 +194,40 @@ namespace _Scripts.Suxghui.Mining
             return amount;
         }
 
-        private static void AddToInventory(string itemId, int amount)
+        private void CacheReferences()
         {
-            if (amount <= 0 || string.IsNullOrWhiteSpace(itemId))
-                return;
+            if (oreSource == null)
+                oreSource = GetComponent<LSO_Ore>() ??
+                            GetComponentInParent<LSO_Ore>() ??
+                            GetComponentInChildren<LSO_Ore>(true);
+            if (_inventory == null)
+                _inventory = LSO_PlayerInventory.Instance ?? FindFirstObjectByType<LSO_PlayerInventory>();
+            if (_cargoWeight == null)
+                _cargoWeight = LSO_Weight.Instance ?? FindFirstObjectByType<LSO_Weight>();
+        }
 
-            GameManager.Instance.Inventory?.AddItem(itemId, amount);
+        private bool TryResolveInventory()
+        {
+            CacheReferences();
+            if (_inventory != null)
+                return true;
+
+            GameManager manager = GameManager.Instance;
+            if (manager == null)
+                return false;
+
+            _inventory = manager.GetComponent<LSO_PlayerInventory>();
+            if (_inventory == null)
+                _inventory = manager.gameObject.AddComponent<LSO_PlayerInventory>();
+            return _inventory != null;
+        }
+
+        private MiningResult FailedResult(MiningFailureReason failure)
+        {
+            LSO_MineralSO mineral = oreSource != null && oreSource.oreSO != null
+                ? oreSource.oreSO.mineral
+                : null;
+            return new MiningResult(mineral, 0, 0, basePurity, false, failure);
         }
     }
 }
