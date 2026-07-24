@@ -99,6 +99,13 @@ namespace _Scripts.Suxghui.Mining
             body.useGravity = false;
             body.isKinematic = !enableMotion;
             body.interpolation = RigidbodyInterpolation.Interpolate;
+
+            Collider[] colliders = GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] != null)
+                    colliders[i].isTrigger = enableMotion;
+            }
         }
 
         private void ApplyMineralMaterial()

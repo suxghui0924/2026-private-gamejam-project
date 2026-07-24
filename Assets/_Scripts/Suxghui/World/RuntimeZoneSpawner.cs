@@ -34,6 +34,8 @@ namespace _Scripts.Suxghui.World
             [FormerlySerializedAs("orePrefabs")]
             public GameObject[] stonePrefabs = Array.Empty<GameObject>();
             public LSO_OreSO[] internalOreSOs = Array.Empty<LSO_OreSO>();
+            [Tooltip("0이면 균등 확률입니다. 값이 높을수록 가격이 비싼 내부/외부 원석이 더 자주 선택됩니다.")]
+            [Range(0f, 3f)] public float mineralValueBias;
             [FormerlySerializedAs("oreLimit"), Min(0)] public int stoneLimit = 30;
             [FormerlySerializedAs("oreRespawnBatchSize"), Min(1)]
             public int stoneRespawnBatchSize = 1;
@@ -57,8 +59,9 @@ namespace _Scripts.Suxghui.World
             public GameObject[] minePrefabs = Array.Empty<GameObject>();
             [Min(0)] public int mineLimit;
             [Min(1)] public int mineRespawnBatchSize = 1;
-            [Min(0.01f)] public float minimumMineScale = 1f;
-            [Min(0.01f)] public float maximumMineScale = 1.5f;
+            [Min(0.01f)] public float minimumMineScale = 3f;
+            [Min(0.01f)] public float maximumMineScale = 4f;
+            [Min(0f)] public float minimumMineSpawnDistance = 8f;
 
             [Header("Zone Respawn")]
             [Tooltip("This range is used independently for ore and mine respawn timers.")]
@@ -122,6 +125,12 @@ namespace _Scripts.Suxghui.World
         [SerializeField] private string runtimeContainerName = "RuntimeZoneSpawns";
         [SerializeField] private bool hideSceneTemplatesAtRuntime = true;
 
+        [Header("Mine Hazard")]
+        [SerializeField] private GameObject mineExplosionVfxPrefab;
+        [SerializeField, Min(0f)] private float mineKnockbackForce = 75f;
+        [SerializeField, Min(0.01f)] private float mineExplosionVfxLifetime = 2.5f;
+        [SerializeField, Min(0.01f)] private float mineExplosionVfxScale = 1f;
+
         [Header("Zone Rules")]
         [SerializeField] private List<ZoneSpawnRule> zoneRules = new List<ZoneSpawnRule>
         {
@@ -129,40 +138,52 @@ namespace _Scripts.Suxghui.World
             {
                 displayName = "Normal Zone",
                 zoneType = ZoneType.Normal,
-                stoneLimit = 35,
+                stoneLimit = 120,
+                stoneRespawnBatchSize = 4,
                 minimumStoneScale = 200f,
                 maximumStoneScale = 300f,
                 mineLimit = 0,
                 minimumExternalOreCount = 1,
                 maximumExternalOreCount = 2,
                 respawnCooldownRange = new Vector2(10f, 12f),
-                minimumSpawnDistance = 50f
+                minimumSpawnDistance = 28f,
+                maximumPlacementAttempts = 300
             },
             new ZoneSpawnRule
             {
                 displayName = "Classified Zone",
                 zoneType = ZoneType.Classified,
-                stoneLimit = 25,
-                minimumStoneScale = 150f,
-                maximumStoneScale = 250f,
-                mineLimit = 25,
+                stoneLimit = 180,
+                stoneRespawnBatchSize = 6,
+                minimumStoneScale = 280f,
+                maximumStoneScale = 380f,
+                mineralValueBias = 1f,
+                mineLimit = 70,
+                mineRespawnBatchSize = 4,
+                minimumMineSpawnDistance = 9f,
                 minimumExternalOreCount = 2,
                 maximumExternalOreCount = 4,
                 respawnCooldownRange = new Vector2(13f, 16f),
-                minimumSpawnDistance = 45f
+                minimumSpawnDistance = 24f,
+                maximumPlacementAttempts = 300
             },
             new ZoneSpawnRule
             {
                 displayName = "Top Secret Zone",
                 zoneType = ZoneType.TopSecret,
-                stoneLimit = 20,
-                minimumStoneScale = 100f,
-                maximumStoneScale = 200f,
-                mineLimit = 35,
+                stoneLimit = 250,
+                stoneRespawnBatchSize = 8,
+                minimumStoneScale = 360f,
+                maximumStoneScale = 480f,
+                mineralValueBias = 1.5f,
+                mineLimit = 110,
+                mineRespawnBatchSize = 6,
+                minimumMineSpawnDistance = 7f,
                 minimumExternalOreCount = 3,
                 maximumExternalOreCount = 5,
                 respawnCooldownRange = new Vector2(17f, 20f),
-                minimumSpawnDistance = 40f
+                minimumSpawnDistance = 20f,
+                maximumPlacementAttempts = 300
             }
         };
 
@@ -335,8 +356,10 @@ namespace _Scripts.Suxghui.World
 
         private void FillStateToLimits(RuntimeZoneState state)
         {
-            SpawnMissingImmediately(state, SpawnCategory.Ore);
+            // Reserve the mine population first. Otherwise the hundreds of stones spawned
+            // before it can consume every valid mine placement candidate.
             SpawnMissingImmediately(state, SpawnCategory.Mine);
+            SpawnMissingImmediately(state, SpawnCategory.Ore);
         }
 
         private void SpawnMissingImmediately(RuntimeZoneState state, SpawnCategory category)
@@ -412,7 +435,10 @@ namespace _Scripts.Suxghui.World
             {
                 if (!rule.zone.TryGetRandomPoint(out Vector3 position))
                     return false;
-                if (IsTooCloseToExisting(position, rule.minimumSpawnDistance))
+                float minimumDistance = category == SpawnCategory.Mine
+                    ? rule.minimumMineSpawnDistance
+                    : rule.minimumSpawnDistance;
+                if (IsTooCloseToExisting(position, minimumDistance, category))
                     continue;
 
                 GameObject prefab = PickRandomPrefab(prefabs, out int sourceIndex);
@@ -420,7 +446,7 @@ namespace _Scripts.Suxghui.World
                     return false;
 
                 LSO_OreSO oreDefinition = category == SpawnCategory.Ore
-                    ? PickRandomOreDefinition(rule.internalOreSOs)
+                    ? PickRandomOreDefinition(rule.internalOreSOs, rule.mineralValueBias)
                     : null;
                 float scale = category == SpawnCategory.Ore
                     ? Random.Range(
@@ -439,6 +465,8 @@ namespace _Scripts.Suxghui.World
 
                 if (category == SpawnCategory.Ore)
                     ConfigureStone(instance, oreDefinition, rule);
+                else
+                    ConfigureMine(instance);
 
                 state.Spawned[instance] = new SpawnMetadata
                 {
@@ -452,7 +480,10 @@ namespace _Scripts.Suxghui.World
             return false;
         }
 
-        private bool IsTooCloseToExisting(Vector3 position, float minimumDistance)
+        private bool IsTooCloseToExisting(
+            Vector3 position,
+            float minimumDistance,
+            SpawnCategory category)
         {
             if (minimumDistance <= 0f)
                 return false;
@@ -462,8 +493,14 @@ namespace _Scripts.Suxghui.World
             {
                 RuntimeZoneState state = _runtimeStates[i];
                 PruneDestroyedObjects(state);
-                foreach (GameObject spawnedObject in state.Spawned.Keys)
+                foreach (KeyValuePair<GameObject, SpawnMetadata> pair in state.Spawned)
                 {
+                    // Mines use their own spacing. Stones must not prevent the hazard
+                    // population from being created in Classified/TopSecret zones.
+                    if (category == SpawnCategory.Mine && pair.Value.Category != SpawnCategory.Mine)
+                        continue;
+
+                    GameObject spawnedObject = pair.Key;
                     if (spawnedObject != null &&
                         (spawnedObject.transform.position - position).sqrMagnitude < squaredDistance)
                         return true;
@@ -545,6 +582,8 @@ namespace _Scripts.Suxghui.World
 
                     if (record.Category == SpawnCategory.Ore)
                         ConfigureStone(instance, record.OreDefinition, runtime.Rule);
+                    else
+                        ConfigureMine(instance);
 
                     runtime.Spawned[instance] = new SpawnMetadata
                     {
@@ -595,6 +634,23 @@ namespace _Scripts.Suxghui.World
             ScatterExternalOres(instance, contents, rule, oreDefinition);
         }
 
+        private void ConfigureMine(GameObject instance)
+        {
+            if (instance.GetComponentInChildren<Collider>(true) == null)
+            {
+                SphereCollider fallbackCollider = instance.AddComponent<SphereCollider>();
+                fallbackCollider.radius = 0.98f;
+                fallbackCollider.isTrigger = false;
+            }
+
+            SpaceMine mine = instance.GetComponent<SpaceMine>() ?? instance.AddComponent<SpaceMine>();
+            mine.Configure(
+                mineExplosionVfxPrefab,
+                mineKnockbackForce,
+                mineExplosionVfxLifetime,
+                mineExplosionVfxScale);
+        }
+
         private static void ScatterExternalOres(
             GameObject stone,
             OreContents contents,
@@ -629,7 +685,9 @@ namespace _Scripts.Suxghui.World
                     break;
 
                 GameObject template = PickRandomPrefab(rule.externalOreTemplates);
-                LSO_MineralSO mineral = PickRandomMineral(rule.externalMinerals) ?? fallbackMineral;
+                LSO_MineralSO mineral = PickRandomMineral(
+                    rule.externalMinerals,
+                    rule.mineralValueBias) ?? fallbackMineral;
                 if (template == null || mineral == null)
                     continue;
 
@@ -876,31 +934,36 @@ namespace _Scripts.Suxghui.World
                 : null;
         }
 
-        private static LSO_OreSO PickRandomOreDefinition(LSO_OreSO[] definitions)
+        private static LSO_OreSO PickRandomOreDefinition(
+            LSO_OreSO[] definitions,
+            float valueBias)
         {
             if (definitions == null)
                 return null;
 
-            int validCount = 0;
+            float totalWeight = 0f;
             for (int i = 0; i < definitions.Length; i++)
             {
                 if (definitions[i] != null)
-                    validCount++;
+                    totalWeight += GetMineralValueWeight(definitions[i].mineral, valueBias);
             }
 
-            if (validCount == 0)
+            if (totalWeight <= 0f)
                 return null;
 
-            int selectedIndex = Random.Range(0, validCount);
+            float selectedWeight = Random.value * totalWeight;
+            LSO_OreSO lastValid = null;
             for (int i = 0; i < definitions.Length; i++)
             {
                 if (definitions[i] == null)
                     continue;
-                if (selectedIndex-- == 0)
+                lastValid = definitions[i];
+                selectedWeight -= GetMineralValueWeight(definitions[i].mineral, valueBias);
+                if (selectedWeight <= 0f)
                     return definitions[i];
             }
 
-            return null;
+            return lastValid;
         }
 
         private static bool HasValidMineral(LSO_MineralSO[] minerals)
@@ -913,26 +976,44 @@ namespace _Scripts.Suxghui.World
             return false;
         }
 
-        private static LSO_MineralSO PickRandomMineral(LSO_MineralSO[] minerals)
+        private static LSO_MineralSO PickRandomMineral(
+            LSO_MineralSO[] minerals,
+            float valueBias)
         {
             if (!HasValidMineral(minerals))
                 return null;
 
-            int validCount = 0;
+            float totalWeight = 0f;
             for (int i = 0; i < minerals.Length; i++)
                 if (minerals[i] != null)
-                    validCount++;
+                    totalWeight += GetMineralValueWeight(minerals[i], valueBias);
 
-            int selectedIndex = Random.Range(0, validCount);
+            float selectedWeight = Random.value * totalWeight;
+            LSO_MineralSO lastValid = null;
             for (int i = 0; i < minerals.Length; i++)
             {
                 if (minerals[i] == null)
                     continue;
-                if (selectedIndex-- == 0)
+                lastValid = minerals[i];
+                selectedWeight -= GetMineralValueWeight(minerals[i], valueBias);
+                if (selectedWeight <= 0f)
                     return minerals[i];
             }
 
-            return null;
+            return lastValid;
+        }
+
+        private static float GetMineralValueWeight(LSO_MineralSO mineral, float valueBias)
+        {
+            if (mineral == null)
+                return 0f;
+
+            float clampedBias = Mathf.Clamp(valueBias, 0f, 3f);
+            if (clampedBias <= 0f)
+                return 1f;
+
+            float normalizedPrice = Mathf.Max(0.1f, mineral.mineralPrice / 100f);
+            return Mathf.Pow(normalizedPrice, clampedBias);
         }
 
         private static void NormalizeRule(ZoneSpawnRule rule)
@@ -953,6 +1034,7 @@ namespace _Scripts.Suxghui.World
             rule.minimumExternalOreAngle = Mathf.Clamp(rule.minimumExternalOreAngle, 0f, 180f);
             rule.minimumMineScale = Mathf.Max(0.01f, rule.minimumMineScale);
             rule.maximumMineScale = Mathf.Max(0.01f, rule.maximumMineScale);
+            rule.minimumMineSpawnDistance = Mathf.Max(0f, rule.minimumMineSpawnDistance);
             rule.minimumSpawnDistance = Mathf.Max(0f, rule.minimumSpawnDistance);
             rule.maximumPlacementAttempts = Mathf.Max(1, rule.maximumPlacementAttempts);
             rule.respawnCooldownRange.x = Mathf.Max(0.1f, rule.respawnCooldownRange.x);

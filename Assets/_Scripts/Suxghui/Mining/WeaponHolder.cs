@@ -309,6 +309,39 @@ namespace _Scripts.Suxghui.Mining
                 }
             }
 
+            public void AimTerminalAt(Vector3 targetPoint, float weight)
+            {
+                if (!IsValid || bones.Length < 2 || weight <= 0f)
+                    return;
+
+                Transform terminalBone = bones[^2];
+                Transform end = bones[^1];
+                Transform terminalParent = terminalBone.parent;
+                Vector3 currentDirection = end.position - terminalBone.position;
+                Vector3 targetDirection = targetPoint - terminalBone.position;
+                if (terminalParent != null)
+                {
+                    currentDirection = terminalParent.InverseTransformDirection(currentDirection);
+                    targetDirection = terminalParent.InverseTransformDirection(targetDirection);
+                }
+
+                // The rig is a 2D/180-degree arm: Bone.002 must only turn around
+                // its local Z axis. Preserve its authored X/Y pose.
+                currentDirection.z = 0f;
+                targetDirection.z = 0f;
+                if (currentDirection.sqrMagnitude < 0.000001f || targetDirection.sqrMagnitude < 0.000001f)
+                    return;
+
+                float signedAngle = Vector3.SignedAngle(
+                    currentDirection,
+                    targetDirection,
+                    Vector3.forward);
+                Quaternion zRotation = Quaternion.AngleAxis(
+                    signedAngle * Mathf.Clamp01(weight),
+                    Vector3.forward);
+                terminalBone.localRotation = zRotation * terminalBone.localRotation;
+            }
+
             public void Solve(Vector3 targetPoint, float weight)
             {
                 if (bones == null || bones.Length < 2 || bones[^1] == null || weight <= 0f)
@@ -484,6 +517,9 @@ namespace _Scripts.Suxghui.Mining
         private MiningTechStats _currentStats;
         private Vector3 _drillBaseLocalPosition;
         private Vector3 _drillBaseLocalScale;
+        private Vector3 _drillTipContactPoint;
+        private Quaternion _drillTipContactRotation = Quaternion.identity;
+        private bool _drillTipTouchingSurface;
         private Vector3 _extractorBaseLocalPosition;
         private float _drillUseWeight;
         private float _extractorUseWeight;
@@ -675,6 +711,8 @@ namespace _Scripts.Suxghui.Mining
             _currentType = type;
             _currentDefinition = holderState != null ? holderState.GetDefinition(type) : null;
             holderState?.SetCurrentWeapon(type);
+            crossHair?.SetPreferredTargetTag(
+                type == MiningTechType.Extractor ? "Ore" : "Stone");
 
             if (_currentDefinition != null)
             {
@@ -915,22 +953,52 @@ namespace _Scripts.Suxghui.Mining
                     drillMaximumStretch,
                     reachWeight);
                 drillChain.StraightenToward(targetPoint, reachWeight);
+                drillChain.AimRootAt(targetPoint, reachWeight, drillRootAimMaximumAngle);
                 drillChain.Solve(targetPoint, reachWeight);
+                drillChain.StretchToTarget(
+                    targetPoint,
+                    drillMinimumStretch,
+                    drillMaximumStretch,
+                    reachWeight);
+                // Bone.002 is the terminal drill bone. Keep this last so parent IK/root
+                // rotations cannot turn the drill head away from the contacted surface.
+                drillChain.AimTerminalAt(targetPoint, reachWeight);
             }
+
+            UpdateDrillTipContact();
         }
 
         private bool IsDrillTipTouchingTarget()
         {
-            if (!drillChain.IsValid || crossHair == null || crossHair.TargetCollider == null)
-                return false;
+            return _drillTipTouchingSurface;
+        }
 
-            Vector3 tipPosition = drillChain.EndPosition;
-            Vector3 closestSurfacePoint = crossHair.TargetCollider.ClosestPoint(tipPosition);
+        private void UpdateDrillTipContact()
+        {
+            Transform drillTip = drillChain.EndTransform;
+            bool hasTarget = drillTip != null && _currentType == MiningTechType.Drill &&
+                             _targetCanMine && crossHair != null && crossHair.HasTarget &&
+                             crossHair.TargetCollider != null && _drillUseWeight > 0.001f;
+            if (!hasTarget)
+            {
+                _drillTipTouchingSurface = false;
+                return;
+            }
+
+            Vector3 closestSurfacePoint = crossHair.TargetCollider.ClosestPoint(drillTip.position);
             float scaleAwareTolerance = drillContactTolerance * Mathf.Max(
                 1f,
                 drillRoot != null ? drillRoot.lossyScale.magnitude : 1f);
-            return Vector3.SqrMagnitude(tipPosition - closestSurfacePoint) <=
-                   scaleAwareTolerance * scaleAwareTolerance;
+            _drillTipTouchingSurface = Vector3.SqrMagnitude(
+                drillTip.position - closestSurfacePoint) <= scaleAwareTolerance * scaleAwareTolerance;
+            _drillTipContactPoint = closestSurfacePoint;
+
+            Vector3 surfaceNormal = crossHair.TargetSurfaceNormal;
+            if (surfaceNormal.sqrMagnitude < 0.000001f)
+                surfaceNormal = drillChain.RootPosition - closestSurfacePoint;
+            _drillTipContactRotation = CreateBeamRotation(
+                surfaceNormal.normalized,
+                drillTip.up);
         }
 
         private void UpdateDrillEffects()
@@ -940,14 +1008,13 @@ namespace _Scripts.Suxghui.Mining
             if (drillTip != null && drillEffectRoots != null)
             {
                 bool hasImpactPoint = _currentType == MiningTechType.Drill && _targetCanMine &&
-                                      crossHair != null && crossHair.HasTarget;
+                                      crossHair != null && crossHair.HasTarget &&
+                                      _drillTipTouchingSurface;
                 Vector3 effectPosition = drillTip.position;
                 if (hasImpactPoint)
                 {
-                    effectPosition = crossHair.TargetSurfacePoint;
-                    Vector3 towardTool = drillChain.RootPosition - effectPosition;
-                    if (towardTool.sqrMagnitude > 0.0001f)
-                        effectPosition += towardTool.normalized * drillEffectSurfaceOffset;
+                    effectPosition = _drillTipContactPoint +
+                                     crossHair.TargetSurfaceNormal.normalized * drillEffectSurfaceOffset;
                 }
 
                 for (int i = 0; i < drillEffectRoots.Length; i++)
@@ -956,11 +1023,14 @@ namespace _Scripts.Suxghui.Mining
                     if (effectRoot == null)
                         continue;
 
-                    effectRoot.SetPositionAndRotation(effectPosition, drillTip.rotation);
+                    effectRoot.SetPositionAndRotation(
+                        effectPosition,
+                        hasImpactPoint ? _drillTipContactRotation : drillTip.rotation);
                 }
             }
 
-            bool shouldPlay = _currentType == MiningTechType.Drill && _fireHeld && _targetCanMine;
+            bool shouldPlay = _currentType == MiningTechType.Drill && _fireHeld &&
+                              _targetCanMine && _drillTipTouchingSurface;
             SetDrillEffectsPlaying(shouldPlay);
         }
 

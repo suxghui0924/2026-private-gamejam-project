@@ -5,6 +5,7 @@ using _Scripts.Suxghui.Manager.Module;
 using _Scripts.Suxghui.Manager.Upgrade;
 using _Scripts.Suxghui.Mining;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace _Scripts.Suxghui.Manager
 {
@@ -27,7 +28,13 @@ namespace _Scripts.Suxghui.Manager
         public DrillUpgradeModule DrillUpgrade { get; private set; }
         public LaserUpgradeModule LaserUpgrade { get; private set; }
         public ExtractorUpgradeModule ExtractorUpgrade { get; private set; }
+        public ISceneState CurrentSceneState { get; private set; }
         public string SavePath => Path.Combine(Application.persistentDataPath, SaveFileName);
+
+        private int _sceneStateSceneHandle = -1;
+        private bool _sceneStateInitialized;
+        private bool _isSwitchingSceneState;
+        private bool _isQuitting;
 
         protected override void Awake()
         {
@@ -38,6 +45,31 @@ namespace _Scripts.Suxghui.Manager
 
             DontDestroyOnLoad(gameObject);
             Load();
+            SceneManager.activeSceneChanged += HandleActiveSceneChanged;
+        }
+
+        private void Start()
+        {
+            ActivateSceneState(SceneManager.GetActiveScene());
+        }
+
+        private void Update()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!_sceneStateInitialized || activeScene.handle != _sceneStateSceneHandle)
+                ActivateSceneState(activeScene);
+
+            if (!IsStateAlive(CurrentSceneState))
+                return;
+
+            try
+            {
+                CurrentSceneState.Executor();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception, this);
+            }
         }
 
         public void Save()
@@ -185,9 +217,123 @@ namespace _Scripts.Suxghui.Manager
             SaveData = data;
         }
 
+        public void SetSceneState(ISceneState nextState)
+        {
+            ChangeSceneState(nextState ?? new EmptySceneState());
+        }
+
+        private void HandleActiveSceneChanged(Scene previousScene, Scene nextScene)
+        {
+            ActivateSceneState(nextScene);
+        }
+
+        private void ActivateSceneState(Scene scene)
+        {
+            if (_isSwitchingSceneState || !scene.IsValid() || !scene.isLoaded)
+                return;
+            if (_sceneStateInitialized && _sceneStateSceneHandle == scene.handle)
+                return;
+
+            _isSwitchingSceneState = true;
+            try
+            {
+                ISceneState nextState = FindSceneState(scene) ?? new EmptySceneState();
+                ChangeSceneState(nextState);
+                _sceneStateSceneHandle = scene.handle;
+                _sceneStateInitialized = true;
+            }
+            finally
+            {
+                _isSwitchingSceneState = false;
+            }
+        }
+
+        private void ChangeSceneState(ISceneState nextState)
+        {
+            if (ReferenceEquals(CurrentSceneState, nextState))
+                return;
+
+            if (IsStateAlive(CurrentSceneState))
+            {
+                try
+                {
+                    CurrentSceneState.Exit();
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception, this);
+                }
+            }
+
+            // Clear the reference before Enter. Even when Enter changes scenes, the previous
+            // state's Executor can no longer be called by GameManager.Update.
+            CurrentSceneState = null;
+            CurrentSceneState = nextState;
+            if (!IsStateAlive(CurrentSceneState))
+                return;
+
+            try
+            {
+                CurrentSceneState.Enter();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception, this);
+            }
+        }
+
+        private static ISceneState FindSceneState(Scene scene)
+        {
+            GameObject[] roots = scene.GetRootGameObjects();
+            ISceneState foundState = null;
+
+            for (int i = 0; i < roots.Length; i++)
+            {
+                MonoBehaviour[] behaviours = roots[i].GetComponentsInChildren<MonoBehaviour>(true);
+                for (int j = 0; j < behaviours.Length; j++)
+                {
+                    if (!(behaviours[j] is ISceneState state))
+                        continue;
+
+                    if (foundState == null)
+                    {
+                        foundState = state;
+                        continue;
+                    }
+
+                    Debug.LogWarning(
+                        $"Scene '{scene.name}' has multiple ISceneState components. " +
+                        $"Using '{((MonoBehaviour)foundState).name}'.",
+                        behaviours[j]);
+                }
+            }
+
+            return foundState;
+        }
+
+        private static bool IsStateAlive(ISceneState state)
+        {
+            if (state == null)
+                return false;
+            return !(state is UnityEngine.Object unityObject) || unityObject != null;
+        }
+
         private void OnApplicationQuit()
         {
+            _isQuitting = true;
+            if (IsStateAlive(CurrentSceneState))
+                CurrentSceneState.Exit();
+            CurrentSceneState = null;
             Save();
+        }
+
+        protected override void OnDestroy()
+        {
+            SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
+            if (!_isQuitting && IsStateAlive(CurrentSceneState))
+                CurrentSceneState.Exit();
+            CurrentSceneState = null;
+            base.OnDestroy();
         }
 
         private void InitializeModules()

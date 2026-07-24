@@ -11,9 +11,10 @@ namespace _Scripts.Suxghui.Mining
     public sealed class GetItemComponent : MonoBehaviour
     {
         [Header("Suction")]
-        [SerializeField, Min(0.01f)] private float collectDistance = 0.08f;
-        [SerializeField, Min(0f)] private float suctionAcceleration = 6f;
-        [SerializeField, Min(0f)] private float maximumSuctionSpeed = 2.5f;
+        [SerializeField, Min(0.01f)] private float collectDistance = 1.2f;
+        [SerializeField, Min(0f)] private float minimumSuctionDuration = 0.4f;
+        [SerializeField, Min(0f)] private float suctionAcceleration = 8f;
+        [SerializeField, Min(0f)] private float maximumSuctionSpeed = 4f;
 
         [Header("Inventory Compatibility")]
         [Tooltip("현재 LSO 인벤토리와 저장용 GameManager 인벤토리를 함께 동기화합니다.")]
@@ -21,6 +22,8 @@ namespace _Scripts.Suxghui.Mining
 
         private readonly HashSet<MineralPickup> _nearbyPickups = new HashSet<MineralPickup>();
         private readonly List<MineralPickup> _iterationBuffer = new List<MineralPickup>();
+        private readonly Dictionary<MineralPickup, float> _suctionStartedAt =
+            new Dictionary<MineralPickup, float>();
         private LSO_PlayerInventory _playerInventory;
         private LSO_Weight _cargoWeight;
         private SphereCollider _collectionTrigger;
@@ -46,7 +49,10 @@ namespace _Scripts.Suxghui.Mining
         {
             MineralPickup pickup = ResolvePickup(other);
             if (pickup != null)
+            {
                 _nearbyPickups.Remove(pickup);
+                _suctionStartedAt.Remove(pickup);
+            }
         }
 
         private void FixedUpdate()
@@ -66,11 +72,15 @@ namespace _Scripts.Suxghui.Mining
                 if (pickup == null || !pickup.IsCollectible)
                 {
                     _nearbyPickups.Remove(pickup);
+                    _suctionStartedAt.Remove(pickup);
                     continue;
                 }
 
                 pickup.AttractTowards(destination, suctionAcceleration, maximumSuctionSpeed);
-                if ((pickup.transform.position - destination).sqrMagnitude <= collectDistanceSquared)
+                bool suctionPlayedLongEnough = _suctionStartedAt.TryGetValue(pickup, out float startedAt) &&
+                                               Time.time - startedAt >= minimumSuctionDuration;
+                if (suctionPlayedLongEnough &&
+                    (pickup.transform.position - destination).sqrMagnitude <= collectDistanceSquared)
                     TryCollect(pickup);
             }
         }
@@ -78,8 +88,8 @@ namespace _Scripts.Suxghui.Mining
         private void Track(Collider other)
         {
             MineralPickup pickup = ResolvePickup(other);
-            if (pickup != null && pickup.IsCollectible)
-                _nearbyPickups.Add(pickup);
+            if (pickup != null && pickup.IsCollectible && _nearbyPickups.Add(pickup))
+                _suctionStartedAt[pickup] = Time.time;
         }
 
         private void TryCollect(MineralPickup pickup)
@@ -130,6 +140,7 @@ namespace _Scripts.Suxghui.Mining
                 return;
 
             _nearbyPickups.Remove(pickup);
+            _suctionStartedAt.Remove(pickup);
             Destroy(pickup.gameObject);
         }
 
@@ -143,19 +154,9 @@ namespace _Scripts.Suxghui.Mining
 
         private float GetWorldCollectDistance()
         {
-            Vector3 scale = transform.lossyScale;
-            float largestScale = Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z));
-            float configuredDistance = collectDistance * Mathf.Max(1f, largestScale);
-
-            if (_collectionTrigger == null)
-                _collectionTrigger = GetComponent<SphereCollider>();
-            if (_collectionTrigger == null)
-                return configuredDistance;
-
-            // The intake lives below a heavily scaled ship. Using the unscaled 0.08 world-unit
-            // distance made pickups collide with the hull forever without reaching the center.
-            float triggerWorldRadius = _collectionTrigger.radius * Mathf.Max(1f, largestScale);
-            return Mathf.Max(configuredDistance, triggerWorldRadius * 0.55f);
+            // Collection distance is deliberately world-space. Collectible ore colliders are
+            // triggers, so they can visibly pass through the hull before reaching this point.
+            return Mathf.Max(0.01f, collectDistance);
         }
 
         private static MineralPickup ResolvePickup(Collider other)

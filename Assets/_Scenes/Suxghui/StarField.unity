@@ -150,7 +150,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
   Priority:
     Enabled: 1
@@ -208,7 +208,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b617507da6d07e749b7efdb34e1173e1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineFollow
   TrackerSettings:
     BindingMode: 5
@@ -227,7 +227,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dbe43d662878a7c43bcd44d43c9e2094, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineDeoccluder
   CollideAgainst:
     serializedVersion: 2
@@ -9026,6 +9026,7 @@ MonoBehaviour:
   nearAimAssistDistance: 45
   targetStickDuration: 0.18
   centerCorrection: 0.45
+  preferredTargetDepthTolerance: 2
   crossHairSprite: {fileID: 21300000, guid: ef1d843a280a586418ede210d39b3b94, type: 3}
   crossHairSize: {x: 32, y: 32}
   idleColor: {r: 1, g: 1, b: 1, a: 1}
@@ -20561,6 +20562,10 @@ MonoBehaviour:
   fillToLimitOnStart: 1
   runtimeContainerName: RuntimeZoneSpawns
   hideSceneTemplatesAtRuntime: 1
+  mineExplosionVfxPrefab: {fileID: 4008258917751898173, guid: 66b238f0f82f87f49a52e1c328b8d055, type: 3}
+  mineKnockbackForce: 75
+  mineExplosionVfxLifetime: 2.5
+  mineExplosionVfxScale: 1
   zoneRules:
   - displayName: Normal Zone
     zoneType: 0
@@ -20571,8 +20576,9 @@ MonoBehaviour:
     - {fileID: 1015804462109481179, guid: 179f2f44e268d6c4fade75d395a7789e, type: 3}
     internalOreSOs:
     - {fileID: 11400000, guid: b780d74ab53bfab40b3f3b322ac5e609, type: 2}
-    stoneLimit: 35
-    stoneRespawnBatchSize: 1
+    mineralValueBias: 0
+    stoneLimit: 120
+    stoneRespawnBatchSize: 4
     minimumStoneScale: 200
     maximumStoneScale: 300
     externalOreTemplates:
@@ -20591,11 +20597,12 @@ MonoBehaviour:
     minePrefabs: []
     mineLimit: 0
     mineRespawnBatchSize: 1
-    minimumMineScale: 1
-    maximumMineScale: 1.5
+    minimumMineScale: 3
+    maximumMineScale: 4
+    minimumMineSpawnDistance: 8
     respawnCooldownRange: {x: 10, y: 12}
-    minimumSpawnDistance: 50
-    maximumPlacementAttempts: 100
+    minimumSpawnDistance: 28
+    maximumPlacementAttempts: 300
   - displayName: Classified Zone
     zoneType: 1
     zone: {fileID: 880000000000000002}
@@ -20605,10 +20612,13 @@ MonoBehaviour:
     - {fileID: 1015804462109481179, guid: 179f2f44e268d6c4fade75d395a7789e, type: 3}
     internalOreSOs:
     - {fileID: 11400000, guid: b780d74ab53bfab40b3f3b322ac5e609, type: 2}
-    stoneLimit: 25
-    stoneRespawnBatchSize: 1
-    minimumStoneScale: 150
-    maximumStoneScale: 250
+    - {fileID: 11400000, guid: e2a1c6f7d94b4e6aa123b6c88f910001, type: 2}
+    - {fileID: 11400000, guid: e2a1c6f7d94b4e6aa123b6c88f910002, type: 2}
+    mineralValueBias: 1
+    stoneLimit: 180
+    stoneRespawnBatchSize: 6
+    minimumStoneScale: 280
+    maximumStoneScale: 380
     externalOreTemplates:
     - {fileID: 5431172503829774152, guid: 7ced8ecf8065dc746a73db7986b27932, type: 3}
     - {fileID: 7835559423575099223, guid: 1c3228fc75b901d48b64d5a30cc67093, type: 3}
@@ -20616,6 +20626,9 @@ MonoBehaviour:
     externalMinerals:
     - {fileID: 11400000, guid: c49c2c28b2ec452bb188e39545de4491, type: 2}
     - {fileID: 11400000, guid: 4dc5212a74ad4cda959368b00bc1155f, type: 2}
+    - {fileID: 11400000, guid: bc0dd2974a044a4485caf0107bee6803, type: 2}
+    - {fileID: 11400000, guid: 2c3fc723639d4ef9a3e9f8fbc6d7d3e5, type: 2}
+    - {fileID: 11400000, guid: e5562f980176426794c05e9e8b54da0a, type: 2}
     minimumExternalOreCount: 2
     maximumExternalOreCount: 4
     minimumExternalOreScale: 0.06
@@ -20623,14 +20636,15 @@ MonoBehaviour:
     externalOreSurfaceOffset: 0.02
     minimumExternalOreAngle: 35
     minePrefabs:
-    - {fileID: 919132149155446097, guid: b9415a31b55ad95459ef44dbb51001a9, type: 3}
-    mineLimit: 25
-    mineRespawnBatchSize: 1
-    minimumMineScale: 1
-    maximumMineScale: 1.5
+    - {fileID: 7518114998947381188, guid: fff491e32b9a86348a064a87d511b791, type: 3}
+    mineLimit: 70
+    mineRespawnBatchSize: 4
+    minimumMineScale: 3
+    maximumMineScale: 4
+    minimumMineSpawnDistance: 9
     respawnCooldownRange: {x: 13, y: 16}
-    minimumSpawnDistance: 45
-    maximumPlacementAttempts: 100
+    minimumSpawnDistance: 24
+    maximumPlacementAttempts: 300
   - displayName: Top Secret Zone
     zoneType: 2
     zone: {fileID: 880000000000000003}
@@ -20639,18 +20653,26 @@ MonoBehaviour:
     - {fileID: 3020401516862969594, guid: ce4fe9e177de9384e9a963eefc4bddae, type: 3}
     - {fileID: 1015804462109481179, guid: 179f2f44e268d6c4fade75d395a7789e, type: 3}
     internalOreSOs:
-    - {fileID: 11400000, guid: b780d74ab53bfab40b3f3b322ac5e609, type: 2}
-    stoneLimit: 20
-    stoneRespawnBatchSize: 1
-    minimumStoneScale: 100
-    maximumStoneScale: 200
+    - {fileID: 11400000, guid: e2a1c6f7d94b4e6aa123b6c88f910002, type: 2}
+    - {fileID: 11400000, guid: e2a1c6f7d94b4e6aa123b6c88f910003, type: 2}
+    - {fileID: 11400000, guid: e2a1c6f7d94b4e6aa123b6c88f910004, type: 2}
+    - {fileID: 11400000, guid: e2a1c6f7d94b4e6aa123b6c88f910005, type: 2}
+    mineralValueBias: 1.5
+    stoneLimit: 250
+    stoneRespawnBatchSize: 8
+    minimumStoneScale: 360
+    maximumStoneScale: 480
     externalOreTemplates:
     - {fileID: 5431172503829774152, guid: 7ced8ecf8065dc746a73db7986b27932, type: 3}
     - {fileID: 7835559423575099223, guid: 1c3228fc75b901d48b64d5a30cc67093, type: 3}
     - {fileID: 1908696435388238696, guid: f7f29263c13d5af4f8c1b7ab5c8c0fdb, type: 3}
     externalMinerals:
     - {fileID: 11400000, guid: 058101fce5af47c8a9e312e5735de88f, type: 2}
-    - {fileID: 11400000, guid: d7efd764a2704a5599991fd73da4d04e, type: 2}
+    - {fileID: 11400000, guid: 362abe07b30e4e5ebfaf5d7072a098b9, type: 2}
+    - {fileID: 11400000, guid: 3fd2db8b28cf442fa307f77f28b92461, type: 2}
+    - {fileID: 11400000, guid: 9fe4a7f2c42e4616afb4997fcd4302fb, type: 2}
+    - {fileID: 11400000, guid: 4f68d10f081b49af88c45f8537877c27, type: 2}
+    - {fileID: 11400000, guid: 19f2fda3ce644150af074f70b5bf7092, type: 2}
     minimumExternalOreCount: 3
     maximumExternalOreCount: 5
     minimumExternalOreScale: 0.06
@@ -20658,14 +20680,15 @@ MonoBehaviour:
     externalOreSurfaceOffset: 0.02
     minimumExternalOreAngle: 35
     minePrefabs:
-    - {fileID: 919132149155446097, guid: b9415a31b55ad95459ef44dbb51001a9, type: 3}
-    mineLimit: 35
-    mineRespawnBatchSize: 1
-    minimumMineScale: 1
-    maximumMineScale: 1.5
+    - {fileID: 7518114998947381188, guid: fff491e32b9a86348a064a87d511b791, type: 3}
+    mineLimit: 110
+    mineRespawnBatchSize: 6
+    minimumMineScale: 3
+    maximumMineScale: 4
+    minimumMineSpawnDistance: 7
     respawnCooldownRange: {x: 17, y: 20}
-    minimumSpawnDistance: 40
-    maximumPlacementAttempts: 100
+    minimumSpawnDistance: 20
+    maximumPlacementAttempts: 300
 --- !u!114 &880000000000000006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20678,10 +20701,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c67b5b2b97a344ddb095bdb84cd917fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.Mining.GetItemComponent
-  collectDistance: 0.08
-  suctionAcceleration: 6
-  maximumSuctionSpeed: 2.5
+  collectDistance: 1.2
+  minimumSuctionDuration: 0.4
+  suctionAcceleration: 8
+  maximumSuctionSpeed: 4
   synchronizePersistentInventory: 1
+--- !u!114 &880000000000000007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7078037780073237635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa27c931e8db4e51918f1fbcb2da576c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.Player.ShipCameraZoom
+  cinemaCamera: {fileID: 2237378}
+  gameplayCamera: {fileID: 975411760}
+  defaultFieldOfView: 65
+  minimumFieldOfView: 35
+  maximumFieldOfView: 90
+  fieldOfViewPerScrollStep: 5
+  zoomSharpness: 12
+  invertScroll: 0
 --- !u!1 &910000000000000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -21915,6 +21959,7 @@ GameObject:
   - component: {fileID: 8735507372029570390}
   - component: {fileID: 918997522}
   - component: {fileID: 918997525}
+  - component: {fileID: 880000000000000007}
   m_Layer: 0
   m_Name: ToonSpaceShip
   m_TagString: Untagged
@@ -21922,6 +21967,109 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1 &880000000000000010
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 880000000000000011}
+  - component: {fileID: 880000000000000012}
+  - component: {fileID: 880000000000000009}
+  - component: {fileID: 880000000000000008}
+  m_Layer: 0
+  m_Name: ShipCollisionSensor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &880000000000000011
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880000000000000010}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7598115114843051577}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!54 &880000000000000012
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880000000000000010}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 1
+--- !u!114 &880000000000000008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880000000000000010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d05ed249ca344398cd44d2ac8819f41, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::_Scripts.Suxghui.Player.ShipCollisionResponder
+  shipRoot: {fileID: 7598115114843051577}
+  collisionSensor: {fileID: 880000000000000009}
+  stoneImpactVfxPrefab: {fileID: 169608471840542328, guid: 08b931b784ae2fc4cb0ce28319b9593e, type: 3}
+  stoneKnockbackForce: 12
+  stoneImpactVfxLifetime: 2.5
+  stoneImpactVfxScale: 0.35
+  knockbackDamping: 2.5
+  maximumKnockbackSpeed: 120
+  collisionCooldown: 0.6
+--- !u!135 &880000000000000009
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 880000000000000010}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.012
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &7108951256152364400
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22119,6 +22267,7 @@ Transform:
   - {fileID: 267238975}
   - {fileID: 724661827}
   - {fileID: 2055387674}
+  - {fileID: 880000000000000011}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: -90, y: 90, z: -90}
 --- !u!1 &7623545439423430336
