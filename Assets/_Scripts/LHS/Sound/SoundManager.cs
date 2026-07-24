@@ -8,7 +8,7 @@ namespace _Scripts.LHS.SoundManager
     {
         public static SoundManager Instance { get; private set; }
 
-        [SerializeField] private SoundDataBaseSo database;
+        [SerializeField] private SoundDataBaseSO database;
 
         private readonly Dictionary<AudioSource, Queue<AudioSource>> _pools = new();
         private readonly Dictionary<string, AudioSource> _activeSources = new();
@@ -52,6 +52,9 @@ namespace _Scripts.LHS.SoundManager
             source.clip = info.clip;
             source.volume = info.volume;
             source.loop = info.looping;
+            source.pitch = info.randomizePitch
+                ? Random.Range(info.pitchRange.x, info.pitchRange.y)
+                : info.pitch;
             source.Play();
 
             _activeSources[key] = source;
