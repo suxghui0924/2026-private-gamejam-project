@@ -20,6 +20,7 @@ namespace _Scripts.Suxghui.Manager
         public WalletModule Wallet { get; private set; }
         public InventoryModule Inventory { get; private set; }
         public ShopModule Shop { get; private set; }
+        public MiningTechSelectionModule TechSelection { get; private set; }
         public HealthUpgradeModule HealthUpgrade { get; private set; }
         public CargoUpgradeModule CargoUpgrade { get; private set; }
         public SpeedUpgradeModule SpeedUpgrade { get; private set; }
@@ -194,6 +195,12 @@ namespace _Scripts.Suxghui.Manager
             Wallet = new WalletModule(SaveData.money);
             Inventory = new InventoryModule(SaveData.inventoryItems);
             Shop = new ShopModule(Wallet, Inventory);
+            TechSelection = new MiningTechSelectionModule(
+                SaveData.selectedMiningTool,
+                string.IsNullOrWhiteSpace(SaveData.currentMiningToolId)
+                    ? SaveData.currentTechId
+                    : SaveData.currentMiningToolId,
+                HandleMiningTechSelection);
 
             ShipStatUpgradeSO healthSettings = Resources.Load<ShipStatUpgradeSO>(HealthUpgradePath);
             ShipStatUpgradeSO cargoSettings = Resources.Load<ShipStatUpgradeSO>(CargoUpgradePath);
@@ -225,6 +232,12 @@ namespace _Scripts.Suxghui.Manager
         private void SaveMiningTechLevel(string techId, int level)
         {
             SetMiningTechLevel(techId, level);
+            Save();
+        }
+
+        private void HandleMiningTechSelection(MiningTechType type, string techId)
+        {
+            SetSelectedMiningTech((int)type, techId);
             Save();
         }
 

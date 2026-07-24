@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using _Scripts.LSO.Data;
 using _Scripts.Suxghui.Manager;
 using _Scripts.Suxghui.Manager.Module;
 using _Scripts.Suxghui.Player;
 using _Scripts.Suxghui.Player.Agent;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -25,8 +27,18 @@ namespace _Scripts.Suxghui.Mining
             [SerializeField, Range(-45f, 45f)] private float forcedCurlDegrees;
             private Quaternion[] _baseLocalRotations;
             private Vector3[] _baseLocalPositions;
+            private Vector3 _baseAnchorLocalPosition;
+            private Quaternion _baseAnchorLocalRotation;
+            private bool _hasBaseAnchorPose;
 
             public float ResponseMultiplier => responseMultiplier;
+            public bool IsValid => bones != null && bones.Length >= 2 && bones[0] != null && bones[^1] != null;
+            public Vector3 RootPosition => IsValid ? bones[0].position : Vector3.zero;
+            public Vector3 EndPosition => IsValid ? bones[^1].position : Vector3.zero;
+            public Transform EndTransform => IsValid ? bones[^1] : null;
+            public Quaternion BaseAnchorLocalRotation => _baseAnchorLocalRotation;
+
+            private Transform Anchor => IsValid ? bones[0].parent : null;
 
             public void CapturePose()
             {
@@ -39,6 +51,14 @@ namespace _Scripts.Suxghui.Mining
                         _baseLocalRotations[i] = bones[i].localRotation;
                         _baseLocalPositions[i] = bones[i].localPosition;
                     }
+                }
+
+                Transform anchor = Anchor;
+                if (anchor != null)
+                {
+                    _baseAnchorLocalPosition = anchor.localPosition;
+                    _baseAnchorLocalRotation = anchor.localRotation;
+                    _hasBaseAnchorPose = true;
                 }
             }
 
@@ -60,6 +80,29 @@ namespace _Scripts.Suxghui.Mining
                             : Quaternion.Slerp(bones[i].localRotation, _baseLocalRotations[i], blend);
                     }
                 }
+            }
+
+            public void RestoreAnchor(float blend)
+            {
+                Transform anchor = Anchor;
+                if (anchor == null)
+                    return;
+                if (!_hasBaseAnchorPose)
+                    CapturePose();
+
+                anchor.localPosition = Vector3.Lerp(anchor.localPosition, _baseAnchorLocalPosition, blend);
+                anchor.localRotation = Quaternion.Slerp(anchor.localRotation, _baseAnchorLocalRotation, blend);
+            }
+
+            public void FollowRoot(Vector3 targetRootPosition, Quaternion targetAnchorLocalRotation, float weight)
+            {
+                Transform anchor = Anchor;
+                if (anchor == null || weight <= 0f)
+                    return;
+
+                weight = Mathf.Clamp01(weight);
+                anchor.localRotation = Quaternion.Slerp(anchor.localRotation, targetAnchorLocalRotation, weight);
+                anchor.position += (targetRootPosition - RootPosition) * weight;
             }
 
             public void Solve(Vector3 targetPoint, float weight)
@@ -143,7 +186,7 @@ namespace _Scripts.Suxghui.Mining
                     bones[i].localRotation = Quaternion.Slerp(
                         bones[i].localRotation,
                         curledRotation,
-                        Mathf.Clamp01(responseMultiplier * weight * 0.6f));
+                        Mathf.Clamp01(responseMultiplier * weight));
                 }
             }
         }
@@ -153,27 +196,66 @@ namespace _Scripts.Suxghui.Mining
         [SerializeField] private CrossHairComponent crossHair;
         [SerializeField] private MovmentComponent movementComponent;
         [SerializeField] private bool autoCreateMineableTargets = true;
+        [SerializeField] private LSO_OreSO defaultOreDefinition;
+        [SerializeField] private LSO_MineralSO defaultStoneMineral;
+        [SerializeField] private LSO_MineralSO defaultScorchedMineral;
 
         [Header("Drill")]
         [SerializeField] private Transform drillRoot;
         [SerializeField] private ProceduralIkChain drillChain = new ProceduralIkChain();
+        [SerializeField] private Transform[] drillEffectRoots = Array.Empty<Transform>();
+        [SerializeField] private ParticleSystem[] drillEffects = Array.Empty<ParticleSystem>();
+        [SerializeField, Min(0f)] private float drillSurfaceOffset = 0.05f;
+        [SerializeField, Range(0.01f, 1f)] private float drillEffectScale = 0.16f;
+        [SerializeField, Min(0f)] private float drillEffectSurfaceOffset = 0.01f;
 
         [Header("Laser")]
         [SerializeField] private Transform laserRoot;
         [SerializeField] private Transform laserMuzzle;
-        [SerializeField, Min(1f)] private float projectileSpeed = 90f;
+        [SerializeField] private Transform laserEndPosition;
+        [SerializeField] private LineRenderer[] laserLines = Array.Empty<LineRenderer>();
+        [SerializeField] private ParticleSystem[] laserEffects = Array.Empty<ParticleSystem>();
         [SerializeField, Min(0.01f)] private float beamTickInterval = 0.1f;
         [SerializeField, Min(0.001f)] private float beamWidth = 0.08f;
 
         [Header("Extractor Tongs")]
         [SerializeField] private Transform extractorRoot;
         [SerializeField] private ProceduralIkChain[] extractorChains = Array.Empty<ProceduralIkChain>();
+        [SerializeField, Min(0)] private int extractorBoomChainIndex = 1;
+        [SerializeField, Min(0f)] private float extractorSurfaceOffset = 0.15f;
 
         [Header("Feedback")]
         [SerializeField] private Color readyColor = new Color(0.2f, 1f, 0.72f, 1f);
         [SerializeField] private Color outOfRangeColor = new Color(1f, 0.2f, 0.18f, 1f);
         [SerializeField] private Color laserColor = new Color(0.25f, 0.9f, 1f, 1f);
         [SerializeField, Min(0f)] private float animationSharpness = 10f;
+
+        [Header("World Resource Feedback")]
+        [SerializeField] private GameObject asteroidExplosionVfxPrefab;
+        [SerializeField, Min(0.1f)] private float explosionVfxLifetime = 2.5f;
+        [SerializeField, Min(0.01f)] private float explosionVfxScale = 1f;
+        [SerializeField, Min(1)] private int maximumLooseMineralChunks = 5;
+        [SerializeField, Min(0.01f)] private float looseMineralScale = 0.18f;
+        [SerializeField, Min(0f)] private float looseScatterMinimumDistance = 0.05f;
+        [SerializeField, Min(0f)] private float looseScatterMaximumDistance = 0.2f;
+        [SerializeField, Min(0.05f)] private float looseScatterDuration = 0.45f;
+        [SerializeField, Min(0f)] private float extractorPullMinimumDistance = 0.05f;
+        [SerializeField, Min(0f)] private float extractorPullMaximumDistance = 0.2f;
+        [SerializeField, Min(0.05f)] private float extractorPullDuration = 0.3f;
+
+        [Header("Camera Impulse")]
+        [SerializeField] private CinemachineImpulseSource laserImpulseSource;
+        [SerializeField] private CinemachineImpulseSource drillImpulseSource;
+        [SerializeField] private CinemachineImpulseSource extractorImpulseSource;
+        [SerializeField, Min(0f)] private float laserImpulseStrength = 0.045f;
+        [SerializeField, Min(0f)] private float drillImpulseStrength = 0.14f;
+        [SerializeField, Min(0f)] private float extractorImpulseStrength = 0.16f;
+        [SerializeField, Min(0.01f)] private float laserImpulseDuration = 0.08f;
+        [SerializeField, Min(0.01f)] private float drillImpulseDuration = 0.18f;
+        [SerializeField, Min(0.01f)] private float extractorImpulseDuration = 0.12f;
+        [SerializeField, Range(1f, 2f)] private float depletedDrillImpulseMultiplier = 1.35f;
+        [SerializeField] private int impulseChannel = 1;
+        [SerializeField] private bool configureImpulseSources = true;
 
         private readonly Dictionary<Renderer, Color> _baseRendererColors = new Dictionary<Renderer, Color>();
         private MaterialPropertyBlock _propertyBlock;
@@ -188,9 +270,16 @@ namespace _Scripts.Suxghui.Mining
         private float _actionTimer;
         private bool _fireHeld;
         private bool _targetInRange;
-        private LineRenderer _beam;
+        private bool _targetCanMine;
+        private bool _drillEffectsPlaying;
+        private bool _laserEffectsPlaying;
         private bool _upgradeModulesSubscribed;
         private GameManager _upgradeManager;
+        private MiningTechSelectionModule _techSelectionModule;
+        private Vector3 _extractorBoomBaseDirectionLocal;
+        private Vector3[] _extractorJawRootOffsetsLocal = Array.Empty<Vector3>();
+        private Quaternion[] _extractorJawBaseAnchorRotations = Array.Empty<Quaternion>();
+        private bool _extractorRigCaptured;
 
         public MiningTechDefinitionSO CurrentWeapon => _currentDefinition;
         public MiningTechType CurrentType => _currentType;
@@ -200,9 +289,12 @@ namespace _Scripts.Suxghui.Mining
         private void Awake()
         {
             _propertyBlock = new MaterialPropertyBlock();
+            EnsureWeaponEffectInstances();
             CacheReferences();
+            EnsureImpulseSources();
             CaptureBasePose();
             EnsureBeam();
+            SetDrillEffectsPlaying(false, true);
 
             MiningTechType initialType = holderState != null && holderState.CurrentWeapon != null
                 ? holderState.CurrentWeapon.TechType
@@ -212,9 +304,60 @@ namespace _Scripts.Suxghui.Mining
             SetRootActive(extractorRoot, initialType == MiningTechType.Extractor);
         }
 
+        private void EnsureWeaponEffectInstances()
+        {
+            if (holderState == null)
+                return;
+
+            Transform drillEffectParent = drillChain.EndTransform != null
+                ? drillChain.EndTransform
+                : drillRoot;
+            GameObject[] drillPrefabs = holderState.DrillEffectPrefabs;
+            if (drillEffectParent != null && drillPrefabs != null)
+            {
+                List<Transform> effectRoots = new List<Transform>();
+                foreach (GameObject prefab in drillPrefabs)
+                {
+                    if (prefab == null)
+                        continue;
+
+                    Transform effectRoot = FindDescendant(drillRoot, prefab.name);
+                    if (effectRoot == null)
+                    {
+                        GameObject instance = Instantiate(prefab, drillEffectParent, false);
+                        instance.name = prefab.name;
+                        effectRoot = instance.transform;
+                    }
+
+                    effectRoot.SetParent(drillEffectParent, false);
+                    ResetLocalTransform(effectRoot, drillEffectScale);
+                    effectRoots.Add(effectRoot);
+                }
+
+                drillEffectRoots = effectRoots.ToArray();
+                drillEffects = CollectParticleSystems(drillEffectRoots, drillRoot);
+            }
+
+            GameObject laserPrefab = holderState.LaserEffectPrefab;
+            if (laserRoot != null && laserPrefab != null && FindDescendant(laserRoot, laserPrefab.name) == null)
+            {
+                GameObject instance = Instantiate(laserPrefab, laserRoot, false);
+                instance.name = laserPrefab.name;
+                ResetLocalTransform(instance.transform);
+            }
+        }
+
+        private static void ResetLocalTransform(Transform target, float uniformScale = 1f)
+        {
+            target.localPosition = Vector3.zero;
+            target.localRotation = Quaternion.identity;
+            target.localScale = Vector3.one * Mathf.Max(0.001f, uniformScale);
+        }
+
         private void Start()
         {
             GameManager manager = GameManager.Instance;
+            SubscribeTechSelection(manager.TechSelection);
             if (holderState != null)
             {
                 manager.ConfigureMiningTechUpgrades(
@@ -232,13 +375,21 @@ namespace _Scripts.Suxghui.Mining
                 holderState.SetLevel(MiningTechType.Extractor, saveData.extractorLevel);
             }
 
-            SelectTech((MiningTechType)Mathf.Clamp(saveData.selectedMiningTool, 0, 2));
+            ApplyTechSelection(
+                manager.TechSelection != null
+                    ? manager.TechSelection.CurrentType
+                    : (MiningTechType)Mathf.Clamp(saveData.selectedMiningTool, 0, 2));
         }
 
         private void Update()
         {
             if (Keyboard.current != null && Keyboard.current.tKey.wasPressedThisFrame)
-                SelectTech((MiningTechType)(((int)_currentType + 1) % 3));
+            {
+                if (_techSelectionModule != null)
+                    _techSelectionModule.SelectNext();
+                else
+                    SelectTech((MiningTechType)(((int)_currentType + 1) % 3));
+            }
 
             _fireHeld = Mouse.current != null && Mouse.current.leftButton.isPressed;
             _actionTimer -= Time.deltaTime;
@@ -250,6 +401,7 @@ namespace _Scripts.Suxghui.Mining
         private void LateUpdate()
         {
             AnimateDrill();
+            UpdateDrillEffects();
             AnimateExtractor();
             UpdateBeamPositions();
         }
@@ -257,8 +409,10 @@ namespace _Scripts.Suxghui.Mining
         private void OnDisable()
         {
             crossHair?.ClearStatusColor();
+            crossHair?.ClearTargetingDistance();
             movementComponent?.SetExternalSpeedMultiplier(1f);
             SetBeamVisible(false);
+            SetDrillEffectsPlaying(false);
             ClearWeaponTint();
             if (drillRoot != null)
                 drillRoot.localPosition = _drillBaseLocalPosition;
@@ -268,10 +422,26 @@ namespace _Scripts.Suxghui.Mining
 
         private void OnDestroy()
         {
+            UnsubscribeTechSelection();
             UnsubscribeUpgradeModules();
         }
 
         public void SelectTech(MiningTechType type)
+        {
+            MiningTechSelectionModule selectionModule = GameManager.Instance.TechSelection;
+            if (selectionModule == null)
+            {
+                ApplyTechSelection(type);
+                return;
+            }
+
+            SubscribeTechSelection(selectionModule);
+            bool changed = selectionModule.Select(type);
+            if (!changed && (_currentDefinition == null || _currentType != type))
+                ApplyTechSelection(type);
+        }
+
+        private void ApplyTechSelection(MiningTechType type)
         {
             _currentType = type;
             _currentDefinition = holderState != null ? holderState.GetDefinition(type) : null;
@@ -284,17 +454,36 @@ namespace _Scripts.Suxghui.Mining
                 CurrentLevel = Mathf.Clamp(savedLevel, 0, _currentDefinition.MaxLevel);
                 holderState?.SetLevel(type, CurrentLevel);
                 _currentStats = _currentDefinition.GetStats(CurrentLevel);
-                GameManager.Instance.SetSelectedMiningTech((int)type, _currentDefinition.TechId);
+                crossHair?.SetTargetingDistance(_currentStats.TargetingRange);
             }
 
             SetRootActive(drillRoot, type == MiningTechType.Drill);
             SetRootActive(laserRoot, type == MiningTechType.Laser);
             SetRootActive(extractorRoot, type == MiningTechType.Extractor);
             SetBeamVisible(false);
+            SetDrillEffectsPlaying(false);
             ClearWeaponTint();
             _actionTimer = 0f;
             ApplyMovementPenalty();
             WeaponChanged?.Invoke(_currentDefinition);
+        }
+
+        private void SubscribeTechSelection(MiningTechSelectionModule selectionModule)
+        {
+            if (_techSelectionModule == selectionModule)
+                return;
+
+            UnsubscribeTechSelection();
+            _techSelectionModule = selectionModule;
+            if (_techSelectionModule != null)
+                _techSelectionModule.SelectionChanged += ApplyTechSelection;
+        }
+
+        private void UnsubscribeTechSelection()
+        {
+            if (_techSelectionModule != null)
+                _techSelectionModule.SelectionChanged -= ApplyTechSelection;
+            _techSelectionModule = null;
         }
 
         public bool UpgradeCurrent()
@@ -305,21 +494,43 @@ namespace _Scripts.Suxghui.Mining
 
         public void HandleLaserImpact(Collider targetCollider, MiningTechStats stats)
         {
-            ApplyMining(targetCollider, MiningTechType.Laser, stats, 1f);
+            MiningResult result = ApplyMining(
+                targetCollider,
+                MiningTechType.Laser,
+                stats,
+                1f,
+                out MineableAsteroid target,
+                out bool depleted);
+            if (result.Failure != MiningFailureReason.None)
+                return;
+
+            GenerateToolImpulse(laserImpulseSource, laserImpulseStrength, MiningTechType.Laser);
+            if (depleted)
+                BreakStone(target);
         }
 
         private void RefreshStatsAndTargetState()
         {
             if (_currentDefinition != null)
+            {
                 _currentStats = _currentDefinition.GetStats(CurrentLevel);
+                crossHair?.SetTargetingDistance(_currentStats.TargetingRange);
+            }
 
+            _targetCanMine = false;
             if (crossHair == null || !crossHair.HasTarget || crossHair.TargetCollider == null)
             {
                 _targetInRange = false;
                 return;
             }
 
-            _targetInRange = Vector3.Distance(transform.position, crossHair.TargetPoint) <= _currentStats.Range;
+            _targetInRange = Vector3.Distance(transform.position, crossHair.TargetSurfacePoint) <= _currentStats.Range;
+            if (!_targetInRange)
+                return;
+
+            MineableAsteroid target = ResolveMineableTarget(crossHair.TargetCollider);
+            _targetCanMine = target != null &&
+                             target.ValidateMining(_currentType, _currentStats) == MiningFailureReason.None;
         }
 
         private void UpdateFeedback()
@@ -336,19 +547,12 @@ namespace _Scripts.Suxghui.Mining
 
             if (_currentType == MiningTechType.Laser)
             {
-                crossHair.SetStatusColor(laserColor);
+                crossHair.SetStatusColor(_targetCanMine ? laserColor : outOfRangeColor);
                 ClearWeaponTint();
                 return;
             }
 
-            bool canMine = _targetInRange;
-            if (canMine)
-            {
-                MineableAsteroid target = ResolveMineableTarget(crossHair.TargetCollider);
-                canMine = target != null && target.ValidateMining(_currentType, _currentStats) == MiningFailureReason.None;
-            }
-
-            Color statusColor = canMine ? readyColor : outOfRangeColor;
+            Color statusColor = _targetCanMine ? readyColor : outOfRangeColor;
             crossHair.SetStatusColor(statusColor);
             ApplyWeaponTint(_currentType == MiningTechType.Drill ? drillRoot : extractorRoot, statusColor);
         }
@@ -371,50 +575,76 @@ namespace _Scripts.Suxghui.Mining
 
         private void UpdateCloseRangeMining(MiningTechType type)
         {
-            bool canUse = _fireHeld && _targetInRange && crossHair != null && crossHair.TargetCollider != null;
+            bool canUse = _fireHeld && _targetCanMine && crossHair != null && crossHair.TargetCollider != null;
             if (!canUse || _actionTimer > 0f)
                 return;
 
-            ApplyMining(crossHair.TargetCollider, type, _currentStats, 1f);
+            MiningResult result = ApplyMining(
+                crossHair.TargetCollider,
+                type,
+                _currentStats,
+                1f,
+                out MineableAsteroid target,
+                out bool depleted);
+            if (result.Failure == MiningFailureReason.None)
+            {
+                if (type == MiningTechType.Drill)
+                {
+                    GenerateMiningImpulse(type, depleted);
+                    if (depleted)
+                        BreakStone(target);
+                }
+                else if (result.ProducedItems && depleted)
+                {
+                    Vector3 pullDirection = target != null
+                        ? transform.position - target.WorldCenter
+                        : -crossHair.CorrectedAimDirection;
+                    if (target != null && target.ExtractLooseMineral(
+                            pullDirection,
+                            extractorPullMinimumDistance,
+                            extractorPullMaximumDistance,
+                            extractorPullDuration))
+                    {
+                        GenerateMiningImpulse(type, true);
+                    }
+                }
+            }
             _actionTimer = _currentStats.ActionInterval;
         }
 
         private void UpdateLaser()
         {
-            if (_currentStats.UsesContinuousBeam)
+            bool beamActive = _fireHeld && crossHair != null;
+            if (beamActive)
+                UpdateBeamPositions();
+            SetBeamVisible(beamActive);
+
+            if (!beamActive || !_targetCanMine || !crossHair.HasTarget ||
+                crossHair.TargetCollider == null || _actionTimer > 0f)
+                return;
+
+            float tickInterval = _currentStats.BeamTickInterval > 0f
+                ? _currentStats.BeamTickInterval
+                : beamTickInterval;
+            MiningTechStats tickStats = _currentStats;
+            tickStats.DamagePerAction = tickStats.BeamDamagePerTick > 0f
+                ? tickStats.BeamDamagePerTick
+                : tickStats.DamagePerAction * tickStats.ActionsPerSecond * tickInterval;
+
+            MiningResult result = ApplyMining(
+                crossHair.TargetCollider,
+                MiningTechType.Laser,
+                tickStats,
+                1f,
+                out MineableAsteroid target,
+                out bool depleted);
+            if (result.Failure == MiningFailureReason.None)
             {
-                bool beamActive = _fireHeld && crossHair != null;
-                SetBeamVisible(beamActive);
-                if (!beamActive || !_targetInRange || !crossHair.HasTarget || _actionTimer > 0f)
-                    return;
-
-                MiningTechStats tickStats = _currentStats;
-                if (tickStats.BeamDamagePerTick > 0f)
-                    tickStats.DamagePerAction = tickStats.BeamDamagePerTick;
-                float tickInterval = tickStats.BeamTickInterval > 0f
-                    ? tickStats.BeamTickInterval
-                    : beamTickInterval;
-                ApplyMining(crossHair.TargetCollider, MiningTechType.Laser, tickStats, 1f);
-                _actionTimer = tickInterval;
-                return;
+                GenerateToolImpulse(laserImpulseSource, laserImpulseStrength, MiningTechType.Laser);
+                if (depleted)
+                    BreakStone(target);
             }
-
-            SetBeamVisible(false);
-            if (!_fireHeld || _actionTimer > 0f || crossHair == null)
-                return;
-
-            Vector3 origin = laserMuzzle != null ? laserMuzzle.position : laserRoot.position;
-            Vector3 direction = crossHair.HasTarget
-                ? (crossHair.TargetPoint - origin).normalized
-                : crossHair.CorrectedAimDirection;
-            MiningLaserProjectile.Spawn(
-                origin,
-                direction,
-                projectileSpeed,
-                _currentStats.Range,
-                this,
-                _currentStats);
-            _actionTimer = _currentStats.ActionInterval;
+            _actionTimer = tickInterval;
         }
 
         private void AnimateDrill()
@@ -422,17 +652,50 @@ namespace _Scripts.Suxghui.Mining
             if (drillRoot == null)
                 return;
 
-            float targetWeight = _currentType == MiningTechType.Drill && _fireHeld && _targetInRange ? 1f : 0f;
+            float targetWeight = _currentType == MiningTechType.Drill && _fireHeld && _targetCanMine ? 1f : 0f;
             _drillUseWeight = Damp(_drillUseWeight, targetWeight);
-            drillRoot.localPosition = Vector3.Lerp(
-                drillRoot.localPosition,
-                _drillBaseLocalPosition,
-                FrameBlend());
-            drillRoot.localScale = _drillBaseLocalScale * _currentStats.VisualScaleMultiplier;
+            drillRoot.localPosition = _drillBaseLocalPosition;
+            drillRoot.localScale = _drillBaseLocalScale;
 
-            drillChain.RestorePose(FrameBlend());
-            if (_currentType == MiningTechType.Drill && crossHair != null && _drillUseWeight > 0.001f)
-                drillChain.Solve(crossHair.TargetPoint, 0.45f * _drillUseWeight);
+            float poseBlend = FrameBlend();
+            drillChain.RestorePose(poseBlend);
+            drillChain.RestoreAnchor(1f);
+            if (_currentType != MiningTechType.Drill || crossHair == null ||
+                !_targetCanMine || _drillUseWeight <= 0.001f || !drillChain.IsValid)
+                return;
+
+            Vector3 targetPoint = GetToolSurfacePoint(drillChain.RootPosition, drillSurfaceOffset);
+            drillChain.Solve(targetPoint, 0.85f * _drillUseWeight);
+        }
+
+        private void UpdateDrillEffects()
+        {
+            Transform drillTip = drillChain.EndTransform;
+            if (drillTip != null && drillEffectRoots != null)
+            {
+                bool hasImpactPoint = _currentType == MiningTechType.Drill && _targetCanMine &&
+                                      crossHair != null && crossHair.HasTarget;
+                Vector3 effectPosition = drillTip.position;
+                if (hasImpactPoint)
+                {
+                    effectPosition = crossHair.TargetSurfacePoint;
+                    Vector3 towardTool = drillChain.RootPosition - effectPosition;
+                    if (towardTool.sqrMagnitude > 0.0001f)
+                        effectPosition += towardTool.normalized * drillEffectSurfaceOffset;
+                }
+
+                for (int i = 0; i < drillEffectRoots.Length; i++)
+                {
+                    Transform effectRoot = drillEffectRoots[i];
+                    if (effectRoot == null)
+                        continue;
+
+                    effectRoot.SetPositionAndRotation(effectPosition, drillTip.rotation);
+                }
+            }
+
+            bool shouldPlay = _currentType == MiningTechType.Drill && _fireHeld && _targetCanMine;
+            SetDrillEffectsPlaying(shouldPlay);
         }
 
         private void AnimateExtractor()
@@ -440,44 +703,245 @@ namespace _Scripts.Suxghui.Mining
             if (extractorRoot == null)
                 return;
 
-            float targetWeight = _currentType == MiningTechType.Extractor && _fireHeld && _targetInRange ? 1f : 0f;
+            bool shouldReach = _currentType == MiningTechType.Extractor && _fireHeld && _targetCanMine &&
+                               crossHair != null && crossHair.HasTarget;
+            float targetWeight = shouldReach ? 1f : 0f;
             _extractorUseWeight = Damp(_extractorUseWeight, targetWeight);
-            extractorRoot.localPosition = Vector3.Lerp(
-                extractorRoot.localPosition,
-                _extractorBaseLocalPosition,
-                FrameBlend());
+            extractorRoot.localPosition = _extractorBaseLocalPosition;
 
+            float poseBlend = FrameBlend();
             for (int i = 0; i < extractorChains.Length; i++)
             {
                 ProceduralIkChain chain = extractorChains[i];
-                chain?.RestorePose(FrameBlend());
-                if (chain == null || _currentType != MiningTechType.Extractor ||
-                    crossHair == null || _extractorUseWeight <= 0.001f)
+                chain?.RestorePose(poseBlend);
+                chain?.RestoreAnchor(i == extractorBoomChainIndex ? 1f : poseBlend);
+            }
+
+            if (_currentType != MiningTechType.Extractor || crossHair == null ||
+                _extractorUseWeight <= 0.001f || !TryGetExtractorBoom(out ProceduralIkChain boom))
+                return;
+
+            if (!_extractorRigCaptured)
+                CaptureExtractorRig();
+            if (!_extractorRigCaptured)
+                return;
+
+            Vector3 targetPoint = GetExtractorTargetPoint(boom.RootPosition);
+            float reachWeight = Mathf.Clamp01(_extractorUseWeight * 1.35f);
+            boom.Solve(targetPoint, 0.85f * reachWeight);
+
+            Vector3 boomDirectionLocal = extractorRoot.InverseTransformDirection(
+                (boom.EndPosition - boom.RootPosition).normalized);
+            Quaternion boomRotationDelta = Quaternion.FromToRotation(
+                _extractorBoomBaseDirectionLocal,
+                boomDirectionLocal);
+
+            for (int i = 0; i < extractorChains.Length; i++)
+            {
+                if (i == extractorBoomChainIndex)
                     continue;
 
-                Vector3 targetPoint = crossHair.TargetCollider != null
-                    ? crossHair.TargetCollider.bounds.center
-                    : crossHair.TargetPoint;
-                Camera gameplayCamera = Camera.main;
-                Vector3 yawAxis = gameplayCamera != null ? gameplayCamera.transform.up : transform.up;
-                Vector3 pitchAxis = gameplayCamera != null ? gameplayCamera.transform.right : transform.right;
-                targetPoint = chain.GetBiasedTarget(targetPoint, yawAxis, pitchAxis);
-                chain.Solve(targetPoint, 0.35f * chain.ResponseMultiplier * _extractorUseWeight);
-                chain.ApplyForcedCurl(_extractorUseWeight);
+                ProceduralIkChain jaw = extractorChains[i];
+                if (jaw == null || !jaw.IsValid)
+                    continue;
+
+                Vector3 targetJawRoot = boom.EndPosition + extractorRoot.TransformVector(
+                    boomRotationDelta * _extractorJawRootOffsetsLocal[i]);
+                Quaternion targetJawRotation = boomRotationDelta * _extractorJawBaseAnchorRotations[i];
+                // The jaw meshes are sibling rigs, so their roots must stay welded to the boom tip.
+                jaw.FollowRoot(targetJawRoot, targetJawRotation, 1f);
+                jaw.ApplyForcedCurl(_targetCanMine ? _extractorUseWeight : 0f);
             }
         }
 
-        private void ApplyMining(
+        private bool TryGetExtractorBoom(out ProceduralIkChain boom)
+        {
+            boom = null;
+            if (extractorChains == null || extractorChains.Length == 0)
+                return false;
+
+            int index = Mathf.Clamp(extractorBoomChainIndex, 0, extractorChains.Length - 1);
+            boom = extractorChains[index];
+            return boom != null && boom.IsValid;
+        }
+
+        private void CaptureExtractorRig()
+        {
+            _extractorRigCaptured = false;
+            if (extractorRoot == null || !TryGetExtractorBoom(out ProceduralIkChain boom))
+                return;
+
+            Vector3 baseDirection = boom.EndPosition - boom.RootPosition;
+            if (baseDirection.sqrMagnitude < 0.000001f)
+                return;
+
+            _extractorBoomBaseDirectionLocal = extractorRoot.InverseTransformDirection(baseDirection.normalized);
+            _extractorJawRootOffsetsLocal = new Vector3[extractorChains.Length];
+            _extractorJawBaseAnchorRotations = new Quaternion[extractorChains.Length];
+
+            for (int i = 0; i < extractorChains.Length; i++)
+            {
+                ProceduralIkChain jaw = extractorChains[i];
+                if (i == extractorBoomChainIndex || jaw == null || !jaw.IsValid)
+                    continue;
+
+                _extractorJawRootOffsetsLocal[i] = extractorRoot.InverseTransformVector(
+                    jaw.RootPosition - boom.EndPosition);
+                _extractorJawBaseAnchorRotations[i] = jaw.BaseAnchorLocalRotation;
+            }
+
+            _extractorRigCaptured = true;
+        }
+
+        private Vector3 GetExtractorTargetPoint(Vector3 boomRootPosition)
+        {
+            return GetToolSurfacePoint(boomRootPosition, extractorSurfaceOffset);
+        }
+
+        private Vector3 GetToolSurfacePoint(Vector3 toolRootPosition, float surfaceOffset)
+        {
+            Vector3 targetPoint = crossHair.TargetSurfacePoint;
+
+            Vector3 surfaceNormal = toolRootPosition - targetPoint;
+            if (surfaceNormal.sqrMagnitude > 0.0001f)
+                targetPoint += surfaceNormal.normalized * surfaceOffset;
+            return targetPoint;
+        }
+
+        private MiningResult ApplyMining(
             Collider targetCollider,
             MiningTechType type,
             MiningTechStats stats,
-            float damageMultiplier)
+            float damageMultiplier,
+            out MineableAsteroid target,
+            out bool depleted)
         {
-            MineableAsteroid target = ResolveMineableTarget(targetCollider);
+            depleted = false;
+            target = ResolveMineableTarget(targetCollider);
             if (target == null)
+                return default;
+
+            GameObject explosionPrefab = asteroidExplosionVfxPrefab != null
+                ? asteroidExplosionVfxPrefab
+                : holderState != null ? holderState.ExplosionEffectPrefab : null;
+            target.ConfigureBreakFeedback(
+                explosionPrefab,
+                explosionVfxLifetime,
+                explosionVfxScale,
+                maximumLooseMineralChunks,
+                looseMineralScale,
+                looseScatterMinimumDistance,
+                looseScatterMaximumDistance,
+                looseScatterDuration);
+
+            bool wasDepleted = target.IsDepleted;
+            MiningResult result = target.ApplyMining(type, stats, damageMultiplier);
+            depleted = !wasDepleted && target.IsDepleted;
+            return result;
+        }
+
+        private void BreakStone(MineableAsteroid target)
+        {
+            if (target == null || target.ResourceType != MiningResourceType.Stone)
                 return;
 
-            target.ApplyMining(type, stats, damageMultiplier);
+            Vector3 impactDirection = crossHair != null
+                ? crossHair.CorrectedAimDirection
+                : transform.forward;
+            GameObject explosionPrefab = asteroidExplosionVfxPrefab != null
+                ? asteroidExplosionVfxPrefab
+                : holderState != null ? holderState.ExplosionEffectPrefab : null;
+            target.BreakIntoLooseMinerals(
+                explosionPrefab,
+                explosionVfxLifetime,
+                explosionVfxScale,
+                maximumLooseMineralChunks,
+                looseMineralScale,
+                looseScatterMinimumDistance,
+                looseScatterMaximumDistance,
+                looseScatterDuration,
+                impactDirection);
+        }
+
+        private void EnsureImpulseSources()
+        {
+            laserImpulseSource = EnsureImpulseSource(
+                laserImpulseSource,
+                CinemachineImpulseDefinition.ImpulseShapes.Recoil,
+                laserImpulseDuration);
+
+            if (drillImpulseSource == laserImpulseSource)
+                drillImpulseSource = null;
+            drillImpulseSource = EnsureImpulseSource(
+                drillImpulseSource,
+                CinemachineImpulseDefinition.ImpulseShapes.Explosion,
+                drillImpulseDuration);
+
+            if (extractorImpulseSource == laserImpulseSource || extractorImpulseSource == drillImpulseSource)
+                extractorImpulseSource = null;
+            extractorImpulseSource = EnsureImpulseSource(
+                extractorImpulseSource,
+                CinemachineImpulseDefinition.ImpulseShapes.Bump,
+                extractorImpulseDuration);
+        }
+
+        private CinemachineImpulseSource EnsureImpulseSource(
+            CinemachineImpulseSource source,
+            CinemachineImpulseDefinition.ImpulseShapes shape,
+            float duration)
+        {
+            bool created = source == null;
+            if (created)
+                source = gameObject.AddComponent<CinemachineImpulseSource>();
+
+            if (created || configureImpulseSources)
+            {
+                source.ImpulseDefinition ??= new CinemachineImpulseDefinition();
+                source.ImpulseDefinition.ImpulseChannel = impulseChannel;
+                source.ImpulseDefinition.ImpulseShape = shape;
+                source.ImpulseDefinition.ImpulseDuration = Mathf.Max(0.01f, duration);
+                source.ImpulseDefinition.ImpulseType = CinemachineImpulseDefinition.ImpulseTypes.Uniform;
+            }
+
+            return source;
+        }
+
+        private void GenerateMiningImpulse(MiningTechType type, bool depleted)
+        {
+            switch (type)
+            {
+                case MiningTechType.Drill:
+                    float strength = drillImpulseStrength *
+                                     (depleted ? depletedDrillImpulseMultiplier : 1f);
+                    GenerateToolImpulse(drillImpulseSource, strength, type);
+                    break;
+                case MiningTechType.Extractor:
+                    GenerateToolImpulse(extractorImpulseSource, extractorImpulseStrength, type);
+                    break;
+            }
+        }
+
+        private void GenerateToolImpulse(
+            CinemachineImpulseSource source,
+            float strength,
+            MiningTechType type)
+        {
+            if (source == null || strength <= 0f)
+                return;
+
+            Vector3 aimDirection = crossHair != null
+                ? crossHair.CorrectedAimDirection
+                : transform.forward;
+            if (aimDirection.sqrMagnitude < 0.0001f)
+                aimDirection = transform.forward;
+
+            Vector3 recoilDirection = -aimDirection.normalized;
+            if (type == MiningTechType.Drill)
+                recoilDirection = (recoilDirection + transform.up * 0.18f).normalized;
+            else if (type == MiningTechType.Extractor)
+                recoilDirection = (recoilDirection + transform.right * 0.22f).normalized;
+
+            source.GenerateImpulseWithVelocity(recoilDirection * strength);
         }
 
         private MineableAsteroid ResolveMineableTarget(Collider targetCollider)
@@ -485,10 +949,48 @@ namespace _Scripts.Suxghui.Mining
             if (targetCollider == null)
                 return null;
 
-            MineableAsteroid target = targetCollider.GetComponentInParent<MineableAsteroid>();
+            Transform resourceRoot = FindResourceRoot(targetCollider.transform);
+            MineableAsteroid target = resourceRoot.GetComponent<MineableAsteroid>() ??
+                                        targetCollider.GetComponentInParent<MineableAsteroid>();
+            LSO_Ore ore = resourceRoot.GetComponent<LSO_Ore>() ??
+                          resourceRoot.GetComponentInChildren<LSO_Ore>(true) ??
+                          targetCollider.GetComponentInParent<LSO_Ore>();
+
             if (target == null && autoCreateMineableTargets)
-                target = targetCollider.gameObject.AddComponent<MineableAsteroid>();
+            {
+                if (ore == null && defaultOreDefinition != null)
+                {
+                    ore = resourceRoot.gameObject.AddComponent<LSO_Ore>();
+                    ore.oreSO = defaultOreDefinition;
+                }
+
+                if (ore != null)
+                    target = resourceRoot.gameObject.AddComponent<MineableAsteroid>();
+            }
+
+            target?.ConfigureOre(ore, defaultStoneMineral, defaultScorchedMineral);
             return target;
+        }
+
+        private static Transform FindResourceRoot(Transform start)
+        {
+            Transform meteorRoot = null;
+            for (Transform current = start; current != null; current = current.parent)
+            {
+                string objectTag = current.tag;
+                bool isMeteorContainer = current.name.Equals("Meteors", StringComparison.OrdinalIgnoreCase);
+                if (!isMeteorContainer &&
+                    (objectTag == "Stone" || objectTag == "One" || objectTag == "Ore"))
+                    return current;
+
+                // Keep the nearest individual Meteor.  The scene container is named "Meteors".
+                if (meteorRoot == null &&
+                    current.name.StartsWith("Meteor", StringComparison.OrdinalIgnoreCase) &&
+                    !isMeteorContainer)
+                    meteorRoot = current;
+            }
+
+            return meteorRoot != null ? meteorRoot : start;
         }
 
         private void CacheReferences()
@@ -497,8 +999,24 @@ namespace _Scripts.Suxghui.Mining
                 crossHair = GetComponentInParent<CrossHairComponent>();
             if (movementComponent == null)
                 movementComponent = GetComponentInParent<MovmentComponent>();
+
+            Transform laserVfxRoot = FindDescendant(laserRoot, "LaserVFX");
             if (laserMuzzle == null)
-                laserMuzzle = laserRoot;
+                laserMuzzle = FindDescendant(laserVfxRoot, "Laser") ?? laserVfxRoot ?? laserRoot;
+            if (laserEndPosition == null)
+                laserEndPosition = FindDescendant(laserRoot, "LaserEndPos");
+            if (laserLines == null || laserLines.Length == 0)
+                laserLines = laserRoot != null
+                    ? laserRoot.GetComponentsInChildren<LineRenderer>(true)
+                    : Array.Empty<LineRenderer>();
+            if (laserEffects == null || laserEffects.Length == 0)
+                laserEffects = laserRoot != null
+                    ? laserRoot.GetComponentsInChildren<ParticleSystem>(true)
+                    : Array.Empty<ParticleSystem>();
+            if (drillEffectRoots == null || drillEffectRoots.Length == 0)
+                drillEffectRoots = FindNamedTransforms(drillRoot, "DrillVFX", 4);
+            if (drillEffects == null || drillEffects.Length == 0)
+                drillEffects = CollectParticleSystems(drillEffectRoots, drillRoot);
         }
 
         private void CaptureBasePose()
@@ -514,6 +1032,7 @@ namespace _Scripts.Suxghui.Mining
             drillChain.CapturePose();
             foreach (ProceduralIkChain chain in extractorChains)
                 chain?.CapturePose();
+            CaptureExtractorRig();
         }
 
         private void ApplyMovementPenalty()
@@ -599,35 +1118,70 @@ namespace _Scripts.Suxghui.Mining
 
         private void EnsureBeam()
         {
-            if (_beam != null)
-                return;
+            if (laserLines == null || laserLines.Length == 0)
+            {
+                GameObject beamObject = new GameObject("Continuous Mining Beam");
+                beamObject.transform.SetParent(transform, false);
+                LineRenderer fallbackLine = beamObject.AddComponent<LineRenderer>();
+                fallbackLine.startWidth = beamWidth;
+                fallbackLine.endWidth = beamWidth * 0.6f;
+                fallbackLine.startColor = laserColor;
+                fallbackLine.endColor = new Color(laserColor.r, laserColor.g, laserColor.b, 0.25f);
+                Shader shader = Shader.Find("Sprites/Default");
+                if (shader != null)
+                    fallbackLine.material = new Material(shader) { color = laserColor };
+                laserLines = new[] { fallbackLine };
+            }
 
-            GameObject beamObject = new GameObject("Continuous Mining Beam");
-            beamObject.transform.SetParent(transform, false);
-            _beam = beamObject.AddComponent<LineRenderer>();
-            _beam.positionCount = 2;
-            _beam.useWorldSpace = true;
-            _beam.startWidth = beamWidth;
-            _beam.endWidth = beamWidth * 0.6f;
-            _beam.startColor = laserColor;
-            _beam.endColor = new Color(laserColor.r, laserColor.g, laserColor.b, 0.25f);
-            Shader shader = Shader.Find("Sprites/Default");
-            if (shader != null)
-                _beam.material = new Material(shader) { color = laserColor };
-            SetBeamVisible(false);
+            foreach (LineRenderer line in laserLines)
+            {
+                if (line == null)
+                    continue;
+
+                line.positionCount = 2;
+                line.useWorldSpace = true;
+            }
+
+            SetBeamVisible(false, true);
         }
 
         private void UpdateBeamPositions()
         {
-            if (_beam == null || !_beam.enabled || crossHair == null)
+            if (laserLines == null || laserLines.Length == 0 || crossHair == null)
                 return;
 
-            Vector3 origin = laserMuzzle != null ? laserMuzzle.position : laserRoot.position;
-            Vector3 end = crossHair.HasTarget
-                ? crossHair.TargetPoint
-                : origin + crossHair.CorrectedAimDirection * _currentStats.Range;
-            _beam.SetPosition(0, origin);
-            _beam.SetPosition(1, end);
+            Transform originTransform = laserMuzzle != null ? laserMuzzle : laserRoot;
+            if (originTransform == null)
+                return;
+
+            Vector3 origin = originTransform.position;
+            Vector3 direction = crossHair.CorrectedAimDirection;
+            float beamLength = Mathf.Max(0.01f, _currentStats.Range);
+            if (crossHair.HasTarget)
+            {
+                Vector3 toSurface = crossHair.TargetSurfacePoint - origin;
+                if (toSurface.sqrMagnitude > 0.000001f)
+                {
+                    direction = toSurface.normalized;
+                    beamLength = Mathf.Min(beamLength, toSurface.magnitude);
+                }
+            }
+
+            if (direction.sqrMagnitude < 0.000001f)
+                direction = originTransform.forward;
+            Vector3 end = origin + direction.normalized * beamLength;
+
+            foreach (LineRenderer line in laserLines)
+            {
+                if (line == null)
+                    continue;
+
+                line.SetPosition(0, origin);
+                line.SetPosition(1, end);
+            }
+
+            if (laserEndPosition != null)
+                laserEndPosition.position = end;
         }
 
         private void ApplyWeaponTint(Transform weaponRoot, Color statusColor)
@@ -664,10 +1218,114 @@ namespace _Scripts.Suxghui.Mining
                     renderer.SetPropertyBlock(null);
         }
 
-        private void SetBeamVisible(bool visible)
+        private void SetBeamVisible(bool visible, bool force = false)
         {
-            if (_beam != null)
-                _beam.enabled = visible;
+            if (laserLines != null)
+            {
+                foreach (LineRenderer line in laserLines)
+                    if (line != null)
+                        line.enabled = visible;
+            }
+
+            if (!force && _laserEffectsPlaying == visible)
+            {
+                if (visible)
+                    RestartCompletedEffects(laserEffects);
+                return;
+            }
+
+            _laserEffectsPlaying = visible;
+            SetParticleSystemsPlaying(laserEffects, visible);
+        }
+
+        private void SetDrillEffectsPlaying(bool visible, bool force = false)
+        {
+            if (!force && _drillEffectsPlaying == visible)
+            {
+                if (visible)
+                    RestartCompletedEffects(drillEffects);
+                return;
+            }
+
+            _drillEffectsPlaying = visible;
+            SetParticleSystemsPlaying(drillEffects, visible);
+        }
+
+        private static void SetParticleSystemsPlaying(ParticleSystem[] effects, bool playing)
+        {
+            if (effects == null)
+                return;
+
+            foreach (ParticleSystem effect in effects)
+            {
+                if (effect == null)
+                    continue;
+
+                if (playing)
+                    effect.Play(false);
+                else
+                    effect.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+        }
+
+        private static void RestartCompletedEffects(ParticleSystem[] effects)
+        {
+            if (effects == null)
+                return;
+
+            foreach (ParticleSystem effect in effects)
+                if (effect != null && !effect.IsAlive(false))
+                    effect.Play(false);
+        }
+
+        private static Transform[] FindNamedTransforms(Transform root, string namePrefix, int expectedRoots)
+        {
+            if (root == null)
+                return Array.Empty<Transform>();
+
+            List<Transform> matches = new List<Transform>();
+            for (int i = 1; i <= expectedRoots; i++)
+            {
+                Transform effectRoot = FindDescendant(root, $"{namePrefix}{i}");
+                if (effectRoot != null)
+                    matches.Add(effectRoot);
+            }
+
+            return matches.ToArray();
+        }
+
+        private static ParticleSystem[] CollectParticleSystems(Transform[] roots, Transform fallbackRoot)
+        {
+            List<ParticleSystem> effects = new List<ParticleSystem>();
+            if (roots != null)
+            {
+                foreach (Transform root in roots)
+                    if (root != null)
+                        effects.AddRange(root.GetComponentsInChildren<ParticleSystem>(true));
+            }
+
+            return effects.Count > 0
+                ? effects.ToArray()
+                : fallbackRoot != null
+                    ? fallbackRoot.GetComponentsInChildren<ParticleSystem>(true)
+                    : Array.Empty<ParticleSystem>();
+        }
+
+        private static Transform FindDescendant(Transform root, string objectName)
+        {
+            if (root == null)
+                return null;
+            if (root.name == objectName)
+                return root;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform match = FindDescendant(root.GetChild(i), objectName);
+                if (match != null)
+                    return match;
+            }
+
+            return null;
         }
 
         private static void SetRootActive(Transform root, bool active)

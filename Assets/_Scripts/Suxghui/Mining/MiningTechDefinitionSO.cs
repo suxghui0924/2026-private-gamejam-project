@@ -16,6 +16,7 @@ namespace _Scripts.Suxghui.Mining
         public float DamagePerAction;
         public float ActionsPerSecond;
         public float Range;
+        public float TargetingRange;
         public float YieldMultiplier;
         public float PurityBonus;
         public float StoneRatio;
@@ -40,7 +41,8 @@ namespace _Scripts.Suxghui.Mining
         [Min(0)] public int upgradeCost;
         [Min(0.01f)] public float damagePerAction;
         [Min(0.01f)] public float actionsPerSecond;
-        [Min(0.1f)] public float range;
+        [InspectorName("Use Distance (Green)"), Min(0.1f)] public float range;
+        [InspectorName("Maximum Target Distance (Red Max)"), Min(0.1f)] public float targetingRange;
         [Min(0.1f)] public float yieldMultiplier;
         [Range(-1f, 1f)] public float purityBonus;
         [Range(0f, 1f)] public float stoneRatio;
@@ -58,11 +60,17 @@ namespace _Scripts.Suxghui.Mining
 
         public MiningTechStats ToStats()
         {
+            float usableRange = Mathf.Max(0.1f, range);
+            float maximumTargetingRange = targetingRange > 0f
+                ? Mathf.Max(usableRange, targetingRange)
+                : usableRange;
+
             return new MiningTechStats
             {
                 DamagePerAction = Mathf.Max(0.01f, damagePerAction),
                 ActionsPerSecond = Mathf.Max(0.01f, actionsPerSecond),
-                Range = Mathf.Max(0.1f, range),
+                Range = usableRange,
+                TargetingRange = maximumTargetingRange,
                 YieldMultiplier = Mathf.Max(0.1f, yieldMultiplier),
                 PurityBonus = Mathf.Clamp(purityBonus, -1f, 1f),
                 StoneRatio = Mathf.Clamp01(stoneRatio),
@@ -117,6 +125,7 @@ namespace _Scripts.Suxghui.Mining
                 DamagePerAction = 1f,
                 ActionsPerSecond = 1f,
                 Range = 10f,
+                TargetingRange = 20f,
                 YieldMultiplier = 1f,
                 MovementMultiplier = 1f,
                 CanMineCoveredMineral = techType != MiningTechType.Extractor,
