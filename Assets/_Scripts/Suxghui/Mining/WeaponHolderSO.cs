@@ -11,6 +11,11 @@ namespace _Scripts.Suxghui.Mining
         [SerializeField] private MiningTechDefinitionSO laser;
         [SerializeField] private MiningTechDefinitionSO extractor;
 
+        [Header("Weapon VFX")]
+        [SerializeField] private GameObject[] drillEffectPrefabs = Array.Empty<GameObject>();
+        [SerializeField] private GameObject laserEffectPrefab;
+        [SerializeField] private GameObject explosionEffectPrefab;
+
         [Header("Runtime State")]
         [SerializeField] private MiningTechDefinitionSO currentWeapon;
         [SerializeField, Min(0)] private int drillLevel;
@@ -18,6 +23,9 @@ namespace _Scripts.Suxghui.Mining
         [SerializeField, Min(0)] private int extractorLevel;
 
         public MiningTechDefinitionSO CurrentWeapon => currentWeapon;
+        public GameObject[] DrillEffectPrefabs => drillEffectPrefabs;
+        public GameObject LaserEffectPrefab => laserEffectPrefab;
+        public GameObject ExplosionEffectPrefab => explosionEffectPrefab;
         public event Action<MiningTechDefinitionSO> CurrentWeaponChanged;
 
         public MiningTechDefinitionSO GetDefinition(MiningTechType type)
