@@ -15093,8 +15093,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7eac362dd4ce0844b0b3c9aaac90e1b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  startScene: LSO_ModuleSelect
-  useLoadScene: 0
+  targetScene: 2
 --- !u!1 &2051620482
 GameObject:
   m_ObjectHideFlags: 0

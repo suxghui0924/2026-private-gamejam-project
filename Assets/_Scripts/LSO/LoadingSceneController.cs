@@ -5,12 +5,19 @@ using UnityEngine.UI;
 
 public class LoadingSceneController : MonoBehaviour
 {
+    private const string DefaultScene = "LSO_MainMenu";
     private static string _nextScene;
 
     [SerializeField] private Slider progressBar;
 
     public static void LoadScene(string sceneName)
     {
+        if (string.IsNullOrWhiteSpace(sceneName))
+        {
+            Debug.LogError("[LoadingSceneController] 이동할 씬 이름이 비어 있습니다.");
+            return;
+        }
+
         _nextScene = sceneName;
         SceneManager.LoadScene("LoadingScene");
     }
@@ -30,6 +37,9 @@ public class LoadingSceneController : MonoBehaviour
 
     private void Start()
     {
+        if (string.IsNullOrWhiteSpace(_nextScene))
+            _nextScene = DefaultScene;
+
         StartCoroutine(LoadSceneProgress());
     }
 

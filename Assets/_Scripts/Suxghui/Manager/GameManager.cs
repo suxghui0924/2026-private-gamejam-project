@@ -11,8 +11,72 @@ namespace _Scripts.Suxghui.Manager
 {
     public class GameManager : MonoSingleton<GameManager>
     {
+        public enum SceneType
+        {
+            LoadingScene,
+            MainMenu,
+            ModuleSelect,
+            Upgrade,
+            StarField
+        }
+
+        public interface ISceneState
+        {
+            void Enter();
+            void Executor();
+            void Exit();
+        }
+
+        public abstract class SceneState : ISceneState
+        {
+            protected SceneState(GameManager manager)
+            {
+                Manager = manager;
+            }
+
+            protected GameManager Manager { get; }
+            public virtual void Enter() { }
+            public virtual void Executor() { }
+            public virtual void Exit() { }
+        }
+
+        public sealed class LoadingScene : SceneState
+        {
+            internal LoadingScene(GameManager manager) : base(manager) { }
+        }
+
+        public sealed class MainMenu : SceneState
+        {
+            internal MainMenu(GameManager manager) : base(manager) { }
+        }
+
+        public sealed class ModuleSelect : SceneState
+        {
+            internal ModuleSelect(GameManager manager) : base(manager) { }
+        }
+
+        public sealed class Upgrade : SceneState
+        {
+            internal Upgrade(GameManager manager) : base(manager) { }
+        }
+
+        public sealed class StarField : SceneState
+        {
+            internal StarField(GameManager manager) : base(manager) { }
+        }
+
+        private sealed class EmptySceneState : SceneState
+        {
+            internal EmptySceneState(GameManager manager) : base(manager) { }
+        }
+
         private const int CurrentSaveVersion = 2;
         private const string SaveFileName = "save.json";
+        private const string LoadingSceneName = "LoadingScene";
+        private const string MainMenuSceneName = "LSO_MainMenu";
+        private const string ModuleSelectSceneName = "LSO_ModuleSelect";
+        private const string UpgradeSceneName = "LSO_Upgrade";
+        private const string StarFieldSceneName = "StarField";
         private const string HealthUpgradePath = "Suxghui/Upgrades/HealthUpgrade";
         private const string CargoUpgradePath = "Suxghui/Upgrades/CargoUpgrade";
         private const string SpeedUpgradePath = "Suxghui/Upgrades/SpeedUpgrade";
@@ -29,12 +93,19 @@ namespace _Scripts.Suxghui.Manager
         public LaserUpgradeModule LaserUpgrade { get; private set; }
         public ExtractorUpgradeModule ExtractorUpgrade { get; private set; }
         public ISceneState CurrentSceneState { get; private set; }
+        public SceneType? CurrentSceneType { get; private set; }
         public string SavePath => Path.Combine(Application.persistentDataPath, SaveFileName);
 
         private int _sceneStateSceneHandle = -1;
         private bool _sceneStateInitialized;
         private bool _isSwitchingSceneState;
         private bool _isQuitting;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Bootstrap()
+        {
+            _ = Instance;
+        }
 
         protected override void Awake()
         {
@@ -46,10 +117,6 @@ namespace _Scripts.Suxghui.Manager
             DontDestroyOnLoad(gameObject);
             Load();
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
-        }
-
-        private void Start()
-        {
             ActivateSceneState(SceneManager.GetActiveScene());
         }
 
@@ -217,9 +284,25 @@ namespace _Scripts.Suxghui.Manager
             SaveData = data;
         }
 
-        public void SetSceneState(ISceneState nextState)
+        public void ChangeSceneState(SceneType targetScene)
         {
-            ChangeSceneState(nextState ?? new EmptySceneState());
+            if (targetScene == SceneType.LoadingScene)
+            {
+                Debug.LogWarning("LoadingScene은 목적지가 아니라 다른 씬으로 이동할 때 자동으로 사용됩니다.", this);
+                return;
+            }
+
+            string targetSceneName = GetUnitySceneName(targetScene);
+            if (SceneManager.GetActiveScene().name == targetSceneName)
+                return;
+
+            if (targetScene == SceneType.ModuleSelect)
+            {
+                SceneManager.LoadScene(targetSceneName);
+                return;
+            }
+
+            global::LoadingSceneController.LoadScene(targetSceneName);
         }
 
         private void HandleActiveSceneChanged(Scene previousScene, Scene nextScene)
@@ -237,8 +320,8 @@ namespace _Scripts.Suxghui.Manager
             _isSwitchingSceneState = true;
             try
             {
-                ISceneState nextState = FindSceneState(scene) ?? new EmptySceneState();
-                ChangeSceneState(nextState);
+                ISceneState nextState = CreateSceneState(scene.name, out SceneType? sceneType);
+                ApplySceneState(nextState, sceneType);
                 _sceneStateSceneHandle = scene.handle;
                 _sceneStateInitialized = true;
             }
@@ -248,7 +331,7 @@ namespace _Scripts.Suxghui.Manager
             }
         }
 
-        private void ChangeSceneState(ISceneState nextState)
+        private void ApplySceneState(ISceneState nextState, SceneType? sceneType)
         {
             if (ReferenceEquals(CurrentSceneState, nextState))
                 return;
@@ -269,6 +352,7 @@ namespace _Scripts.Suxghui.Manager
             // state's Executor can no longer be called by GameManager.Update.
             CurrentSceneState = null;
             CurrentSceneState = nextState;
+            CurrentSceneType = sceneType;
             if (!IsStateAlive(CurrentSceneState))
                 return;
 
@@ -282,33 +366,43 @@ namespace _Scripts.Suxghui.Manager
             }
         }
 
-        private static ISceneState FindSceneState(Scene scene)
+        private ISceneState CreateSceneState(string unitySceneName, out SceneType? sceneType)
         {
-            GameObject[] roots = scene.GetRootGameObjects();
-            ISceneState foundState = null;
-
-            for (int i = 0; i < roots.Length; i++)
+            switch (unitySceneName)
             {
-                MonoBehaviour[] behaviours = roots[i].GetComponentsInChildren<MonoBehaviour>(true);
-                for (int j = 0; j < behaviours.Length; j++)
-                {
-                    if (!(behaviours[j] is ISceneState state))
-                        continue;
-
-                    if (foundState == null)
-                    {
-                        foundState = state;
-                        continue;
-                    }
-
-                    Debug.LogWarning(
-                        $"Scene '{scene.name}' has multiple ISceneState components. " +
-                        $"Using '{((MonoBehaviour)foundState).name}'.",
-                        behaviours[j]);
-                }
+                case LoadingSceneName:
+                    sceneType = SceneType.LoadingScene;
+                    return new LoadingScene(this);
+                case MainMenuSceneName:
+                    sceneType = SceneType.MainMenu;
+                    return new MainMenu(this);
+                case ModuleSelectSceneName:
+                    sceneType = SceneType.ModuleSelect;
+                    return new ModuleSelect(this);
+                case UpgradeSceneName:
+                    sceneType = SceneType.Upgrade;
+                    return new Upgrade(this);
+                case StarFieldSceneName:
+                case "LSO_StarField":
+                    sceneType = SceneType.StarField;
+                    return new StarField(this);
+                default:
+                    sceneType = null;
+                    return new EmptySceneState(this);
             }
+        }
 
-            return foundState;
+        private static string GetUnitySceneName(SceneType sceneType)
+        {
+            return sceneType switch
+            {
+                SceneType.LoadingScene => LoadingSceneName,
+                SceneType.MainMenu => MainMenuSceneName,
+                SceneType.ModuleSelect => ModuleSelectSceneName,
+                SceneType.Upgrade => UpgradeSceneName,
+                SceneType.StarField => StarFieldSceneName,
+                _ => throw new ArgumentOutOfRangeException(nameof(sceneType), sceneType, null)
+            };
         }
 
         private static bool IsStateAlive(ISceneState state)
@@ -324,6 +418,7 @@ namespace _Scripts.Suxghui.Manager
             if (IsStateAlive(CurrentSceneState))
                 CurrentSceneState.Exit();
             CurrentSceneState = null;
+            CurrentSceneType = null;
             Save();
         }
 
@@ -333,6 +428,7 @@ namespace _Scripts.Suxghui.Manager
             if (!_isQuitting && IsStateAlive(CurrentSceneState))
                 CurrentSceneState.Exit();
             CurrentSceneState = null;
+            CurrentSceneType = null;
             base.OnDestroy();
         }
 

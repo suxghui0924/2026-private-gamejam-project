@@ -1,3 +1,4 @@
+using _Scripts.Suxghui.Manager;
 using _Scripts.Suxghui.Player;
 using UnityEngine;
 
@@ -24,7 +25,7 @@ public class LSO_SpaceStation : MonoBehaviour
         _isDocked = true;
         spaceAgent.HealthComponent.currentHeartbeat = false;
 
-        LoadingSceneController.LoadScene("LSO_UpGrade");
+        GameManager.Instance.ChangeSceneState(GameManager.SceneType.Upgrade);
     }
 
     public void ToGameUI(GameObject plane)

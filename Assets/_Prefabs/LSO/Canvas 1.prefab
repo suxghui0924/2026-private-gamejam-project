@@ -3761,8 +3761,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7eac362dd4ce0844b0b3c9aaac90e1b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LSO_StartGame
-  startScene: LSO_StarField
-  useLoadScene: 1
+  targetScene: 4
 --- !u!1 &6947464920478602285
 GameObject:
   m_ObjectHideFlags: 0
