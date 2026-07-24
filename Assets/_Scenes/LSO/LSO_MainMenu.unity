@@ -1191,6 +1191,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 250671818}
+  - component: {fileID: 250671819}
   m_Layer: 5
   m_Name: Setting
   m_TagString: Untagged
@@ -1219,6 +1220,25 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 638.55, y: 180}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &250671819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 250671817}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b67e440188da14348bc67d7ff9ec8bb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LSO_ButtonScale
+  hoverScale: 1.05
+  hoverDuration: 0.2
+  hoverEase: 27
+  pressScale: 0.95
+  pressDuration: 0.1
+  pressEase: 6
+  ignoreTimeScale: 1
 --- !u!1 &252480788
 GameObject:
   m_ObjectHideFlags: 0
@@ -2032,6 +2052,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 465974660}
+  - component: {fileID: 465974661}
   m_Layer: 5
   m_Name: Start
   m_TagString: Untagged
@@ -2060,6 +2081,25 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 638.55, y: 180}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &465974661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 465974659}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b67e440188da14348bc67d7ff9ec8bb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LSO_ButtonScale
+  hoverScale: 1.05
+  hoverDuration: 0.2
+  hoverEase: 27
+  pressScale: 0.95
+  pressDuration: 0.1
+  pressEase: 6
+  ignoreTimeScale: 1
 --- !u!1 &467536047
 GameObject:
   m_ObjectHideFlags: 0
@@ -4337,6 +4377,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 859717836}
+  - component: {fileID: 859717837}
   m_Layer: 5
   m_Name: Exit
   m_TagString: Untagged
@@ -4365,6 +4406,25 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 638.55, y: 180}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &859717837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 859717835}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b67e440188da14348bc67d7ff9ec8bb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LSO_ButtonScale
+  hoverScale: 1.05
+  hoverDuration: 0.2
+  hoverEase: 27
+  pressScale: 0.95
+  pressDuration: 0.1
+  pressEase: 6
+  ignoreTimeScale: 1
 --- !u!1 &886672096
 GameObject:
   m_ObjectHideFlags: 0

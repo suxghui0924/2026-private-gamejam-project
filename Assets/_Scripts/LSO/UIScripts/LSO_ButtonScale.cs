@@ -1,3 +1,4 @@
+using _Scripts.LHS.SoundManager;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using DG.Tweening;
@@ -39,6 +40,7 @@ public class LSO_ButtonScale : MonoBehaviour,
     public void OnPointerEnter(PointerEventData eventData)
     {
         _isHovering = true;
+        
         if (!_isPressed) AnimateTo(hoverScale, hoverDuration, hoverEase);
     }
 
@@ -53,7 +55,7 @@ public class LSO_ButtonScale : MonoBehaviour,
     public void OnPointerDown(PointerEventData eventData)
     {
         if (eventData.button != PointerEventData.InputButton.Left) return;
-
+        SoundManager.Instance.Play(SoundType.UI,"Click01");
         _isPressed = true;
         AnimateTo(pressScale, pressDuration, pressEase);
     }
