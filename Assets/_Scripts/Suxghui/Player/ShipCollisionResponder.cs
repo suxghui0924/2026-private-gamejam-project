@@ -43,8 +43,6 @@ namespace _Scripts.Suxghui.Player
             if (collisionSensor == null)
                 collisionSensor = GetComponent<SphereCollider>();
 
-            if (collisionSensor != null)
-                collisionSensor.isTrigger = true;
         }
 
         private void LateUpdate()
@@ -62,6 +60,17 @@ namespace _Scripts.Suxghui.Player
         }
 
         private void OnTriggerEnter(Collider other)
+        {
+            HandleCollision(other);
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (collision != null)
+                HandleCollision(collision.collider);
+        }
+
+        private void HandleCollision(Collider other)
         {
             if (other == null || other.transform.IsChildOf(shipRoot))
                 return;

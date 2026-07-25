@@ -47836,6 +47836,8 @@ MonoBehaviour:
   stoneFuelDamage: 8
   stoneImpactVfxLifetime: 2.5
   stoneImpactVfxScale: 0.35
+  stationKnockbackForce: 18
+  stationFuelDamage: 4
   knockbackDamping: 2.5
   maximumKnockbackSpeed: 120
   collisionCooldown: 0.6

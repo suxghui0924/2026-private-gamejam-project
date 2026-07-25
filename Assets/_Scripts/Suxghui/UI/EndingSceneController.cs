@@ -87,6 +87,14 @@ namespace _Scripts.Suxghui.UI
 
                 yield return new WaitForSecondsRealtime(line.HoldDuration);
             }
+
+            // The ending is a terminal scene. SaveData.endingReached remains
+            // true, so a later launch will not retrigger it until ResetAll.
+            yield return new WaitForSecondsRealtime(1f);
+            Application.Quit();
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#endif
         }
 
         private void PlayTypingSound()

@@ -648,14 +648,6 @@ namespace _Scripts.Suxghui.Mining
 
         private void Update()
         {
-            if (Keyboard.current != null && Keyboard.current.tKey.wasPressedThisFrame)
-            {
-                if (_techSelectionModule != null)
-                    _techSelectionModule.SelectNext();
-                else
-                    SelectTech((MiningTechType)(((int)_currentType + 1) % 3));
-            }
-
             _fireHeld = Mouse.current != null && Mouse.current.leftButton.isPressed;
             _actionTimer -= Time.deltaTime;
             RefreshStatsAndTargetState();
