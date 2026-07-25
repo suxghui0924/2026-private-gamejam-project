@@ -352,6 +352,35 @@ namespace _Scripts.Suxghui.Player
             bool moving = _throttle01 > jetThrottleThreshold;
             bool boosting = moving && _boosterInput;
 
+<<<<<<< HEAD
+=======
+            if (moving && !boosting && !_jetSoundPlaying)
+            {
+                if (SoundManager.Instance != null)
+                    SoundManager.Instance.Play(SoundType.SFX, "JetIdle1");
+                _jetSoundPlaying = true;
+            }
+            else if ((!moving || boosting) && _jetSoundPlaying)
+            {
+                if (SoundManager.Instance != null)
+                    SoundManager.Instance.Stop(SoundType.SFX, "JetIdle1");
+                _jetSoundPlaying = false;
+            }
+
+            if (boosting && !_boosterSoundPlaying)
+            {
+                if (SoundManager.Instance != null)
+                    SoundManager.Instance.Play(SoundType.SFX, "Fire");
+                _boosterSoundPlaying = true;
+            }
+            else if (!boosting && _boosterSoundPlaying)
+            {
+                if (SoundManager.Instance != null)
+                    SoundManager.Instance.Stop(SoundType.SFX, "Fire");
+                _boosterSoundPlaying = false;
+            }
+
+>>>>>>> parent of 29191029 ({PAtch)
             // While boosting, the blue booster flames replace the normal ones.
             SetParticlesPlaying(boosterJetEngineVfx, boosting, ref _boosterJetPlaying);
             SetParticlesPlaying(jetEngineVfx, moving && !boosting, ref _jetPlaying);

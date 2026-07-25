@@ -1250,6 +1250,10 @@ namespace _Scripts.Suxghui.Mining
                 ? asteroidExplosionVfxPrefab
                 : holderState != null ? holderState.ExplosionEffectPrefab : null;
             SpawnOreReleaseVfx(target.WorldCenter);
+<<<<<<< HEAD
+=======
+            PlayMiningSound("Explosion2");
+>>>>>>> parent of 29191029 ({PAtch)
             target.BreakIntoLooseMinerals(
                 explosionPrefab,
                 explosionVfxLifetime,

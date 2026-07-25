@@ -34,6 +34,11 @@ namespace _Scripts.Suxghui.World
                 return;
 
             _detonated = true;
+<<<<<<< HEAD
+=======
+            if (SoundManager.Instance != null)
+                SoundManager.Instance.Play(SoundType.SFX, "Explosion");
+>>>>>>> parent of 29191029 ({PAtch)
             Vector3 awayFromMine = ship.ShipPosition - transform.position;
             if (awayFromMine.sqrMagnitude < 0.0001f)
                 awayFromMine = contactPoint - transform.position;

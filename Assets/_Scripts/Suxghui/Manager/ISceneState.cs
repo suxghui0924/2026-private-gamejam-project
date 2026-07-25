@@ -60,7 +60,16 @@ namespace _Scripts.Suxghui.Manager
         public StarFieldState(GameManager manager) => Manager = manager;
         public GameManager Manager { get; }
 
+<<<<<<< HEAD
         public void Enter() { }
+=======
+        public void Enter()
+        {
+            if (_Scripts.LHS.SoundManager.SoundManager.Instance != null)
+                _Scripts.LHS.SoundManager.SoundManager.Instance.Play(
+                    _Scripts.LHS.Sound.SoundType.BGM, "Space");
+        }
+>>>>>>> parent of 29191029 ({PAtch)
         public void Executor() { }
         public void Exit() => Manager.Save();
     }
