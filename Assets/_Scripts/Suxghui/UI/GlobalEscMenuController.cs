@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace _Scripts.Suxghui.UI
 {
@@ -105,6 +106,7 @@ namespace _Scripts.Suxghui.UI
             BindButtonByLabel("CONTINUE", CloseMenu);
             BindButtonByLabel("SETTING", OpenSettingsWindow);
             BindButtonByLabel("EXIT", ExitGame);
+            BindButtonsByOrderAsFallback();
             _buttonsBound = true;
             CloseMenu();
         }
@@ -133,6 +135,12 @@ namespace _Scripts.Suxghui.UI
         private void OpenMenu()
         {
             if (_escCanvas == null) return;
+            EnsureEventSystem();
+            GraphicRaycaster raycaster = _escCanvas.GetComponent<GraphicRaycaster>();
+            if (raycaster == null) raycaster = _escCanvas.AddComponent<GraphicRaycaster>();
+            raycaster.enabled = true;
+            foreach (Button button in _escCanvas.GetComponentsInChildren<Button>(true))
+                button.interactable = true;
             _timeScaleBeforePause = Time.timeScale;
             _cursorVisibleBeforePause = Cursor.visible;
             _cursorLockModeBeforePause = Cursor.lockState;
@@ -226,6 +234,31 @@ namespace _Scripts.Suxghui.UI
                 button.onClick.AddListener(action);
                 return;
             }
+        }
+
+        private void BindButtonsByOrderAsFallback()
+        {
+            Button[] buttons = _escCanvas.GetComponentsInChildren<Button>(true);
+            if (buttons.Length < 3) return;
+            BindButtonIfUnassigned(buttons[0], CloseMenu);
+            BindButtonIfUnassigned(buttons[1], OpenSettingsWindow);
+            BindButtonIfUnassigned(buttons[2], ExitGame);
+        }
+
+        private static void BindButtonIfUnassigned(Button button, UnityEngine.Events.UnityAction action)
+        {
+            if (button == null) return;
+            button.onClick.RemoveListener(action);
+            button.onClick.AddListener(action);
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (EventSystem.current != null) return;
+            GameObject host = new GameObject("GlobalEventSystem");
+            host.AddComponent<EventSystem>();
+            host.AddComponent<StandaloneInputModule>();
+            DontDestroyOnLoad(host);
         }
     }
 }

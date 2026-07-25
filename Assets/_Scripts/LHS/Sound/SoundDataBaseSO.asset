@@ -22,6 +22,9 @@ MonoBehaviour:
     pitch: 1
     randomizePitch: 0
     pitchRange: {x: 0, y: 0}
+    useFade: 0
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
   - soundID: Click01
     type: 1
     audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
@@ -31,6 +34,9 @@ MonoBehaviour:
     pitch: 1
     randomizePitch: 1
     pitchRange: {x: 0.95, y: 1.05}
+    useFade: 0
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
   - soundID: EndingTyping
     type: 0
     audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
@@ -227,6 +233,18 @@ MonoBehaviour:
     type: 0
     audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
     clip: {fileID: 8300000, guid: 3699c139a101c4e42a307eaee8a58393, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 1
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.4
+    fadeOutDuration: 0.4
+  - soundID: Space
+    type: 2
+    audioSourcePrefab: {fileID: 3339975149277409374, guid: 956a37f927bd107479f44bd579546d5d, type: 3}
+    clip: {fileID: 8300000, guid: 3f11effabc5477940bb058729a57e573, type: 3}
     volume: 1
     looping: 1
     pitch: 1

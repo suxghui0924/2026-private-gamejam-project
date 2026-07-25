@@ -27,6 +27,7 @@ namespace _Scripts.Suxghui.Mining
         private LSO_PlayerInventory _playerInventory;
         private LSO_Weight _cargoWeight;
         private SphereCollider _collectionTrigger;
+        private Coroutine _pendingSave;
 
         private void Awake()
         {
@@ -124,7 +125,7 @@ namespace _Scripts.Suxghui.Mining
                     ? _cargoWeight.Weight
                     : gameManager.SaveData.cargoWeight + taken;
                 gameManager.SetCargoWeight(savedWeight);
-                gameManager.Save();
+                QueueSave(gameManager);
             }
 
             string mineralName = !string.IsNullOrWhiteSpace(mineral?.mineralName)
@@ -143,6 +144,21 @@ namespace _Scripts.Suxghui.Mining
             _nearbyPickups.Remove(pickup);
             _suctionStartedAt.Remove(pickup);
             Destroy(pickup.gameObject);
+        }
+
+        private void QueueSave(GameManager gameManager)
+        {
+            if (gameManager == null || _pendingSave != null)
+                return;
+            _pendingSave = StartCoroutine(SaveNextFrame(gameManager));
+        }
+
+        private System.Collections.IEnumerator SaveNextFrame(GameManager gameManager)
+        {
+            yield return new WaitForSecondsRealtime(0.1f);
+            if (gameManager != null)
+                gameManager.Save();
+            _pendingSave = null;
         }
 
         private void CacheInventory()
