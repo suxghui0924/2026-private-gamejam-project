@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
 using _Scripts.LHS.Sound;
 
 namespace _Scripts.LHS.SoundManager
@@ -26,7 +27,35 @@ namespace _Scripts.LHS.SoundManager
                 return;
             }
             Instance = this;
+            // A manager nested under a scene container would otherwise be
+            // destroyed together with that container during scene loading.
+            if (transform.parent != null)
+                transform.SetParent(null, true);
             DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+        }
+
+        private void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            if (Instance == this)
+                Instance = null;
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (scene.name == "StarField" || scene.name == "LSO_StarField")
+                StartCoroutine(PlayStarFieldBgmAfterSceneStart());
+        }
+
+        private IEnumerator PlayStarFieldBgmAfterSceneStart()
+        {
+            // Run after scene Start methods so a legacy MainBGM test component
+            // cannot overwrite the StarField music.
+            yield return null;
+            if (Instance == this)
+                Play(SoundType.BGM, "Space");
         }
 
         private string MakeKey(SoundType type, string ID) => $"{type}_{ID}";
@@ -105,14 +134,13 @@ namespace _Scripts.LHS.SoundManager
     source.clip = info.clip;
     source.volume = info.volume;
     source.loop = info.looping;
+    source.mute = false;
+    source.ignoreListenerPause = true;
+    source.spatialBlend = 0f;
     source.pitch = info.randomizePitch
         ? Random.Range(info.pitchRange.x, info.pitchRange.y)
         : info.pitch;
 
-    if (type == SoundType.BGM)
-    {
-        source.spatialBlend = 0f;
-    }
     AudioMixerGroup outputGroup = source.outputAudioMixerGroup;
 
     Debug.Log(
@@ -121,7 +149,10 @@ namespace _Scripts.LHS.SoundManager
             : $"[SoundManager] MixerGroup: {outputGroup.name}, " +
               $"Mixer: {outputGroup.audioMixer.name}"
     );
-    source.Play();
+    if (info.looping)
+        source.Play();
+    else
+        source.PlayOneShot(info.clip, info.volume);
 
     _activeSources[key] = source;
 
@@ -173,9 +204,13 @@ namespace _Scripts.LHS.SoundManager
         {
             if (_pools.TryGetValue(prefab, out var queue) && queue.Count > 0)
             {
-                var source = queue.Dequeue();
-                source.gameObject.SetActive(true);
-                return source;
+                while (queue.Count > 0)
+                {
+                    AudioSource source = queue.Dequeue();
+                    if (source == null) continue;
+                    source.gameObject.SetActive(true);
+                    return source;
+                }
             }
 
             var newSource = Instantiate(prefab, transform);

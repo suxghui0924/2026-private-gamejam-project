@@ -22,13 +22,34 @@ namespace _Scripts.Suxghui.UI
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
+            SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
+            SceneManager.activeSceneChanged += HandleActiveSceneChanged;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void EnsureCurrentScene()
+        {
+            if (SceneManager.GetActiveScene().name == EndingSceneName)
+                EnsureForScene(SceneManager.GetActiveScene());
         }
 
         private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (!string.Equals(scene.name, EndingSceneName, StringComparison.Ordinal))
                 return;
-            if (FindFirstObjectByType<EndingSceneController>() != null)
+            EnsureForScene(scene);
+        }
+
+        private static void HandleActiveSceneChanged(Scene previous, Scene current)
+        {
+            if (current.name == EndingSceneName)
+                EnsureForScene(current);
+        }
+
+        public static void EnsureForScene(Scene scene)
+        {
+            if (!scene.IsValid() || scene.name != EndingSceneName ||
+                FindFirstObjectByType<EndingSceneController>() != null)
                 return;
 
             GameObject host = new GameObject(nameof(EndingSceneController));
