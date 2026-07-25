@@ -68,13 +68,15 @@ namespace _Scripts.Suxghui.Mining
                 return;
             }
 
-            Vector3 toDestination = destination - body.worldCenterOfMass;
+            Vector3 toDestination = destination - transform.position;
             if (toDestination.sqrMagnitude < 0.000001f)
                 return;
 
             Vector3 desiredVelocity = toDestination.normalized * Mathf.Max(0f, maximumSpeed);
-            Vector3 nextPosition = body.position + desiredVelocity * Time.fixedDeltaTime;
-            body.MovePosition(nextPosition);
+            // Once a pickup is inside the collection trigger it no longer needs
+            // solver-driven movement. Direct movement avoids a physics island
+            // update for every loose mineral chunk.
+            transform.position += desiredVelocity * Time.fixedDeltaTime;
         }
 
         private Rigidbody EnsureRigidbody()

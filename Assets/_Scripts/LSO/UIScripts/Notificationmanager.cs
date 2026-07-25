@@ -38,7 +38,7 @@ public class NotificationManager : MonoBehaviour
         if (message.StartsWith("원석 획득") && Time.unscaledTime < Instance._nextOreNotificationTime)
             return;
         if (message.StartsWith("원석 획득"))
-            Instance._nextOreNotificationTime = Time.unscaledTime + 0.2f;
+            Instance._nextOreNotificationTime = Time.unscaledTime + 0.75f;
         Instance.Show(message);
         if (SoundManager.Instance != null)
             SoundManager.Instance.Play(SoundType.UI, "Click01");

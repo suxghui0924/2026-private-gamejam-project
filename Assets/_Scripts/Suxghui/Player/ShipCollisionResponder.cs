@@ -22,6 +22,10 @@ namespace _Scripts.Suxghui.Player
         [SerializeField, Min(0.01f)] private float stoneImpactVfxLifetime = 2.5f;
         [SerializeField, Min(0.01f)] private float stoneImpactVfxScale = 0.35f;
 
+        [Header("Station Collision")]
+        [SerializeField, Min(0f)] private float stationKnockbackForce = 18f;
+        [SerializeField, Min(0f)] private float stationFuelDamage = 4f;
+
         [Header("Knockback")]
         [SerializeField, Min(0f)] private float knockbackDamping = 2.5f;
         [SerializeField, Min(0f)] private float maximumKnockbackSpeed = 120f;
@@ -69,6 +73,22 @@ namespace _Scripts.Suxghui.Player
             {
                 Vector3 contactPoint = other.ClosestPoint(ShipPosition);
                 mine.Detonate(this, contactPoint);
+                return;
+            }
+
+            Transform station = FindTaggedAncestor(other.transform, "Station");
+            if (station != null && CanRespondTo(station.gameObject))
+            {
+                Vector3 stationCollisionPoint = other.ClosestPoint(ShipPosition);
+                Vector3 awayFromStation = ShipPosition - other.bounds.center;
+                if (awayFromStation.sqrMagnitude < 0.0001f)
+                    awayFromStation = ShipPosition - station.position;
+                if (awayFromStation.sqrMagnitude < 0.0001f)
+                    awayFromStation = -ShipForward;
+
+                SpawnVfx(stoneImpactVfxPrefab, stationCollisionPoint, awayFromStation);
+                ApplyKnockback(awayFromStation, stationKnockbackForce);
+                ConsumeFuel(stationFuelDamage);
                 return;
             }
 
