@@ -22,9 +22,6 @@ MonoBehaviour:
     pitch: 1
     randomizePitch: 0
     pitchRange: {x: 0, y: 0}
-    useFade: 0
-    fadeInDuration: 0.5
-    fadeOutDuration: 0.5
   - soundID: Click01
     type: 1
     audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
@@ -34,9 +31,6 @@ MonoBehaviour:
     pitch: 1
     randomizePitch: 1
     pitchRange: {x: 0.95, y: 1.05}
-    useFade: 0
-    fadeInDuration: 0.5
-    fadeOutDuration: 0.5
   - soundID: EndingTyping
     type: 0
     audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
@@ -46,6 +40,7 @@ MonoBehaviour:
     pitch: 1.15
     randomizePitch: 1
     pitchRange: {x: 1.05, y: 1.25}
+<<<<<<< HEAD
     useFade: 0
     fadeInDuration: 0.5
     fadeOutDuration: 0.5
@@ -253,3 +248,5 @@ MonoBehaviour:
     useFade: 1
     fadeInDuration: 0.4
     fadeOutDuration: 0.4
+=======
+>>>>>>> parent of 58c03143 (Merge branch 'Leehosong' into base)
