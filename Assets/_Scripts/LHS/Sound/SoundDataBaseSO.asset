@@ -145,6 +145,18 @@ MonoBehaviour:
     useFade: 1
     fadeInDuration: 0.5
     fadeOutDuration: 0.5
+  - soundID: Explosion
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: e23794a67cd895846a1c9fd0b79266e8, type: 3}
+    volume: 1
+    looping: 0
+    pitch: 1
+    randomizePitch: 1
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 0
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
   - soundID: Explosion2
     type: 0
     audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
@@ -241,27 +253,3 @@ MonoBehaviour:
     useFade: 1
     fadeInDuration: 0.4
     fadeOutDuration: 0.4
-  - soundID: Explosion
-    type: 0
-    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
-    clip: {fileID: 8300000, guid: e23794a67cd895846a1c9fd0b79266e8, type: 3}
-    volume: 1
-    looping: 0
-    pitch: 1
-    randomizePitch: 1
-    pitchRange: {x: 0.95, y: 1.05}
-    useFade: 0
-    fadeInDuration: 0.5
-    fadeOutDuration: 0.5
-  - soundID: Explosion3
-    type: 0
-    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
-    clip: {fileID: 8300000, guid: afd1a23000b192f4a9a9c8c57932f69c, type: 3}
-    volume: 1
-    looping: 0
-    pitch: 1
-    randomizePitch: 1
-    pitchRange: {x: 0.95, y: 1.05}
-    useFade: 0
-    fadeInDuration: 0.5
-    fadeOutDuration: 0.5

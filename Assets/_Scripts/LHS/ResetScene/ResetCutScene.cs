@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
-using _Scripts.LHS.Sound;
-using _Scripts.LHS.SoundManager;
 using _Scripts.Suxghui.Manager;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -44,7 +42,6 @@ public class ResetCutScene : MonoBehaviour
             .AppendInterval(0.5f)
             .AppendCallback(() =>
             {
-                SoundManager.Instance.Play(SoundType.SFX,"Alert");
                 CameraShake(2, 0.4f);
                 CameraShake(2, 0.5f);
                 CameraShake(2, 0.7f);
@@ -54,7 +51,6 @@ public class ResetCutScene : MonoBehaviour
             .AppendInterval(0.6f)
             .AppendCallback(() =>
             {
-                SoundManager.Instance.Play(SoundType.SFX,"Explosion");
                 _cinemachineCamera2.Priority = 20;
                 CameraShake(5, 1.2f);
                 CameraShake(5, 1.2f);
@@ -64,7 +60,6 @@ public class ResetCutScene : MonoBehaviour
             .AppendInterval(0.5f)
             .AppendCallback(() =>
             {
-                SoundManager.Instance.Play(SoundType.SFX,"Explosion3");
                 CameraShake(30, 0.2f);
                 CameraShake(30, 0.2f);
                 _third.Play();
