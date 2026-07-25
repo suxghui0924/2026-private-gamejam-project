@@ -111,7 +111,6 @@ public class LSO_StationTrigger : MonoBehaviour
         {
             float restored = manager.RestoreFuel(manager.SaveData.maxFuel);
             manager.Save();
-            NotificationManager.Notify($"회복 구역: 연료 {restored:0.#} 회복");
             Debug.Log($"[정거장] 연료 {restored:0.#} 충전 완료 " +
                       $"({manager.SaveData.fuel:0.#}/{manager.SaveData.maxFuel:0.#})", this);
             return;
@@ -121,7 +120,6 @@ public class LSO_StationTrigger : MonoBehaviour
             return;
 
         _upgradeSceneRequested = true;
-        NotificationManager.Notify("업그레이드 구역으로 이동합니다");
         manager.Save();
         manager.ChangeSceneState(manager.UpgradeState);
     }

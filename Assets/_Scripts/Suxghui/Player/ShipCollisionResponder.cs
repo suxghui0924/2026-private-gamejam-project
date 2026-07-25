@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using _Scripts.Suxghui.Manager;
 using _Scripts.Suxghui.World;
-using _Scripts.LHS.Sound;
-using _Scripts.LHS.SoundManager;
 using UnityEngine;
 
 namespace _Scripts.Suxghui.Player
@@ -104,8 +102,6 @@ namespace _Scripts.Suxghui.Player
                 awayFromStone = -ShipForward;
 
             SpawnVfx(stoneImpactVfxPrefab, collisionPoint, awayFromStone);
-            if (SoundManager.Instance != null)
-                SoundManager.Instance.Play(SoundType.SFX, "Explosion2");
             ApplyKnockback(awayFromStone, stoneKnockbackForce);
             ConsumeFuel(stoneFuelDamage);
         }

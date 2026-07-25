@@ -19,10 +19,8 @@ namespace _Scripts.LSO
         private int _level;
         private int _maxLevel;
         private bool _canUpgrade;
-        private bool _canAfford;
         private ShipStatUpgradeModule _boundModule;
         private Button _button;
-        private WalletModule _wallet;
 
         private void Awake()
         {
@@ -78,12 +76,8 @@ namespace _Scripts.LSO
                 _level = _boundModule.Level;
                 _maxLevel = _boundModule.MaxLevel;
                 _canUpgrade = _boundModule.CanUpgrade;
-                _wallet = GameManager.Instance?.Wallet;
-                _canAfford = _wallet == null || _wallet.Money >= _price;
             }
 
-            if (_button != null)
-                _button.interactable = _canUpgrade && _canAfford;
             Refresh();
         }
 
@@ -97,18 +91,12 @@ namespace _Scripts.LSO
             _boundModule = nextModule;
             if (_boundModule != null)
                 _boundModule.Upgraded += HandleUpgraded;
-            _wallet = GameManager.Instance?.Wallet;
-            if (_wallet != null)
-                _wallet.MoneyChanged += HandleMoneyChanged;
         }
 
         private void UnbindModule()
         {
             if (_boundModule != null)
                 _boundModule.Upgraded -= HandleUpgraded;
-            if (_wallet != null)
-                _wallet.MoneyChanged -= HandleMoneyChanged;
-            _wallet = null;
             _boundModule = null;
         }
 
@@ -129,10 +117,7 @@ namespace _Scripts.LSO
         private void HandleUpgraded(int level, float value)
         {
             RefreshState();
-            NotificationManager.Notify($"{statType} 업그레이드 성공 (Lv.{level})");
         }
-
-        private void HandleMoneyChanged(int money) => RefreshState();
 
         private void Refresh()
         {
@@ -167,11 +152,7 @@ namespace _Scripts.LSO
         {
             BindModule();
             if (_boundModule == null || !_canUpgrade || !_boundModule.TryUpgrade())
-            {
-                if (_boundModule != null && _boundModule.CanUpgrade)
-                    NotificationManager.Notify($"업그레이드 실패: {Mathf.Max(0, _price - (GameManager.Instance?.Wallet?.Money ?? 0))} 코인 부족");
                 RefreshState();
-            }
         }
     }
 }
