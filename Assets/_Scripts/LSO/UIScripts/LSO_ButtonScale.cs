@@ -1,4 +1,4 @@
-using _Scripts.LHS.SoundManager;
+using _Scripts.LHS.Sound;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using DG.Tweening;

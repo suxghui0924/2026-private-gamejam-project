@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace _Scripts.LHS.SoundManager
+namespace _Scripts.LHS.Sound
 {
     public enum SoundType
     {
@@ -23,6 +23,11 @@ namespace _Scripts.LHS.SoundManager
         public float pitch = 1f;
         public bool randomizePitch;
         public Vector2 pitchRange = new Vector2(0.95f, 1.05f);
+
+        [Header("Fade")]
+        public bool useFade;
+        [Range(0f, 5f)] public float fadeInDuration = 0.5f;
+        [Range(0f, 5f)] public float fadeOutDuration = 0.5f;
     }
 
     [CreateAssetMenu(fileName = "SoundDataBaseSO", menuName = "SO/SoundDataBaseSO")]
