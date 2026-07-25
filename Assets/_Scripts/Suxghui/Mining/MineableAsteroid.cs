@@ -124,7 +124,8 @@ namespace _Scripts.Suxghui.Mining
                 return;
 
             _rigidbody.position = _motionOrigin + offset.normalized * _maximumMotionDistance;
-            _rigidbody.linearVelocity = Vector3.zero;
+            if (!_rigidbody.isKinematic)
+                _rigidbody.linearVelocity = Vector3.zero;
             _motionActive = false;
         }
 
