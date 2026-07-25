@@ -73,10 +73,15 @@ namespace _Scripts.Suxghui.Mining
                 return;
 
             Vector3 desiredVelocity = toDestination.normalized * Mathf.Max(0f, maximumSpeed);
+<<<<<<< HEAD
             body.linearVelocity = Vector3.MoveTowards(
                 body.linearVelocity,
                 desiredVelocity,
                 Mathf.Max(0f, acceleration) * Time.fixedDeltaTime);
+=======
+            Vector3 nextPosition = body.position + desiredVelocity * Time.fixedDeltaTime;
+            body.MovePosition(nextPosition);
+>>>>>>> parent of 8bd7d123 (Add Click Sound & Station Collision)
         }
 
         private Rigidbody EnsureRigidbody()
