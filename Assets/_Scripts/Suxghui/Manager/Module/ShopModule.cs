@@ -40,8 +40,10 @@ namespace _Scripts.Suxghui.Manager.Module
 
         public bool TrySell(LSO_MineralSO itemId, int amount = 1)
         {
-            if (amount <= 0 || !_sellPrices.TryGetValue(itemId, out int price))
+            if (amount <= 0 || !itemId)
                 return false;
+
+            int price = GetSellPrice(itemId);
 
             if (!_inventory.TryRemoveItem(itemId, amount))
                 return false;
@@ -57,18 +59,25 @@ namespace _Scripts.Suxghui.Manager.Module
 
             foreach (InventoryItemSaveData item in items)
             {
-                if (_sellPrices.TryGetValue(item.itemId, out int price))
-                    totalPrice += price * item.amount;
+                if (item.itemId)
+                    totalPrice += GetSellPrice(item.itemId) * item.amount;
             }
 
             foreach (InventoryItemSaveData item in items)
             {
-                if (_sellPrices.ContainsKey(item.itemId))
+                if (item.itemId)
                     _inventory.TryRemoveItem(item.itemId, item.amount);
             }
 
             _wallet.AddMoney(totalPrice);
             return totalPrice;
+        }
+
+        private int GetSellPrice(LSO_MineralSO mineral)
+        {
+            return _sellPrices.TryGetValue(mineral, out int registeredPrice)
+                ? registeredPrice
+                : mineral.PricePerKilogram;
         }
     }
 }

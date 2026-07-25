@@ -8,6 +8,7 @@ namespace _Scripts.Suxghui.World
     {
         [SerializeField] private GameObject explosionVfxPrefab;
         [SerializeField, Min(0f)] private float knockbackForce = 75f;
+        [SerializeField, Min(0f)] private float fuelDamage = 24f;
         [SerializeField, Min(0.01f)] private float explosionVfxLifetime = 2.5f;
         [SerializeField, Min(0.01f)] private float explosionVfxScale = 1f;
 
@@ -16,11 +17,13 @@ namespace _Scripts.Suxghui.World
         public void Configure(
             GameObject explosionPrefab,
             float force,
+            float fuelDamageAmount,
             float vfxLifetime,
             float vfxScale)
         {
             explosionVfxPrefab = explosionPrefab;
             knockbackForce = Mathf.Max(0f, force);
+            fuelDamage = Mathf.Max(0f, fuelDamageAmount);
             explosionVfxLifetime = Mathf.Max(0.01f, vfxLifetime);
             explosionVfxScale = Mathf.Max(0.01f, vfxScale);
         }
@@ -38,6 +41,7 @@ namespace _Scripts.Suxghui.World
                 awayFromMine = -ship.ShipForward;
 
             ship.ApplyKnockback(awayFromMine, knockbackForce);
+            ship.ConsumeFuel(fuelDamage);
             SpawnExplosion(awayFromMine);
 
             Collider[] colliders = GetComponentsInChildren<Collider>(true);

@@ -16,5 +16,5 @@ MonoBehaviour:
   mineralName: "\uAD6C\uB9AC"
   mineralMaterial: {fileID: 2100000, guid: d8a1f0c25e184a9b98c4c045cb41a003, type: 2}
   mineralDescription: "\uAD6C\uB9AC\uC0C9 \uAD11\uBB3C"
-  mineralPrice: 80
+  mineralPrice: 85
   mineralRarity: 0

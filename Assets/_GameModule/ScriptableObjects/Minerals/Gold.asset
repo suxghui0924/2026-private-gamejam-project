@@ -16,5 +16,5 @@ MonoBehaviour:
   mineralName: "\uAE08"
   mineralMaterial: {fileID: 2100000, guid: d8a1f0c25e184a9b98c4c045cb41a007, type: 2}
   mineralDescription: "\uAE08\uC0C9 \uAD11\uBB3C"
-  mineralPrice: 170
+  mineralPrice: 220
   mineralRarity: 1

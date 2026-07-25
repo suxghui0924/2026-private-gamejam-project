@@ -17,12 +17,12 @@ MonoBehaviour:
   - value: 20
     upgradeCost: 0
   - value: 30
-    upgradeCost: 400
+    upgradeCost: 1200
   - value: 45
-    upgradeCost: 900
-  - value: 60
-    upgradeCost: 1600
-  - value: 80
-    upgradeCost: 2800
-  - value: 110
-    upgradeCost: 4500
+    upgradeCost: 3400
+  - value: 65
+    upgradeCost: 7200
+  - value: 90
+    upgradeCost: 13000
+  - value: 125
+    upgradeCost: 21000

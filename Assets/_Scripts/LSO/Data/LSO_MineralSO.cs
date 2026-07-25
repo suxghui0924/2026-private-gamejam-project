@@ -16,8 +16,11 @@ namespace _Scripts.LSO.Data
         public string mineralDescription;
 
         [Header("Economy")]
+        [InspectorName("Price Per Kg")]
+        [Tooltip("Selling price for one kilogram. Inventory amount 1 equals 1 kg.")]
         [Min(0)]
         public int mineralPrice;
+        public int PricePerKilogram => Mathf.Max(0, mineralPrice);
         public LSO_MineralRarity mineralRarity;
     }
 }

@@ -95,10 +95,6 @@ public class ResetCutScene : MonoBehaviour
 #endif
         }
     
-#if !UNITY_EDITOR
-using System.Diagnostics;
-#endif
-
     private void RestartBuiltApplication()
     {
 #if UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX

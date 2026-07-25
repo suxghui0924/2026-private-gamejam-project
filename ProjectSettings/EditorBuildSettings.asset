@@ -9,9 +9,6 @@ EditorBuildSettings:
     path: Assets/_Scenes/LSO/LSO_MainMenu.unity
     guid: 6e03ad3a336d1a34c9e27594170441d0
   - enabled: 1
-    path: Assets/_Scenes/Suxghui/StarField.unity
-    guid: 14efe3fb3326b00489c451cf0b04f523
-  - enabled: 1
     path: Assets/_Scenes/LSO/LoadingScene.unity
     guid: a28f3b944833faf4fa92384965ae7523
   - enabled: 1
@@ -21,11 +18,17 @@ EditorBuildSettings:
     path: Assets/_Scenes/LSO/LSO_Upgrade.unity
     guid: 8f5987106fb56d44bbb797357dea8067
   - enabled: 1
-    path: Assets/_Scenes/Suxghui/LSO_StarField.unity
-    guid: b2b9de9f58abaff4b99401e03d4e7608
+    path: Assets/_Scenes/Suxghui/StarField.unity
+    guid: 14efe3fb3326b00489c451cf0b04f523
+  - enabled: 1
+    path: Assets/_Scenes/Suxghui/EndingScene.unity
+    guid: 8c745e6b06181424290c0844e0aa5c7f
   - enabled: 1
     path: Assets/_Scenes/LHS/ResetScene.unity
     guid: 9c3b0914be24a00498d7488bf144a5c9
+  - enabled: 0
+    path: Assets/_Scenes/Suxghui/LSO_StarField.unity
+    guid: b2b9de9f58abaff4b99401e03d4e7608
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

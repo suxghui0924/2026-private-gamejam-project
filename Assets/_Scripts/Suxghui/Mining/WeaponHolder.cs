@@ -11,6 +11,7 @@ using UnityEngine.InputSystem;
 
 namespace _Scripts.Suxghui.Mining
 {
+    // Coordinates the drill, laser, and extractor runtime behaviours.
     [DefaultExecutionOrder(100)]
     public sealed class WeaponHolder : MonoBehaviour
     {

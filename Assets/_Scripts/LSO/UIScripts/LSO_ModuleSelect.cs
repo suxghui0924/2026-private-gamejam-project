@@ -7,7 +7,8 @@ public class LSO_ModuleSelect : MonoBehaviour
     public MiningTechType miningTechType;
     public void Select()
     {
-        GameManager.Instance.TechSelection.Select(miningTechType);
-        GameManager.Instance.ChangeSceneState(GameManager.SceneType.StarField);
+        GameManager manager = GameManager.Instance;
+        manager.TechSelection.Select(miningTechType);
+        manager.ChangeSceneState(manager.StarFieldState);
     }
 }

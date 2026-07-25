@@ -12,6 +12,7 @@ namespace _Scripts.LHS.Radar
 
         public static event Action<RadarTarget> Added;
         public static event Action<RadarTarget> Removed;
+        public static event Action<RadarTarget> Changed;
 
         [field: SerializeField]
         public Sprite Icon { get; private set; }
@@ -41,6 +42,21 @@ namespace _Scripts.LHS.Radar
         public void SetVisible(bool visible)
         {
             IsVisible = visible;
+            NotifyChanged();
+        }
+
+        public void Configure(Sprite icon, Color color, bool isVisible = true)
+        {
+            Icon = icon;
+            Color = color;
+            IsVisible = isVisible;
+            NotifyChanged();
+        }
+
+        private void NotifyChanged()
+        {
+            if (isActiveAndEnabled && ActiveTargets.Contains(this))
+                Changed?.Invoke(this);
         }
 
         [RuntimeInitializeOnLoadMethod(
@@ -50,6 +66,7 @@ namespace _Scripts.LHS.Radar
             ActiveTargets.Clear();
             Added = null;
             Removed = null;
+            Changed = null;
         }
     }
 }

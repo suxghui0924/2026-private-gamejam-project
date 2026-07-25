@@ -20,12 +20,13 @@ public class LSO_SpaceStation : MonoBehaviour
             Debug.LogWarning("우주선에 헬스 컴포넌트가 없음");
             return;
         } 
-        Heal(plane);
+        Refuel();
 
         _isDocked = true;
         spaceAgent.HealthComponent.currentHeartbeat = false;
 
-        GameManager.Instance.ChangeSceneState(GameManager.SceneType.Upgrade);
+        GameManager manager = GameManager.Instance;
+        manager.ChangeSceneState(manager.UpgradeState);
     }
 
     public void ToGameUI(GameObject plane)
@@ -43,9 +44,10 @@ public class LSO_SpaceStation : MonoBehaviour
         _isDocked = false;
     }
 
-    public void Heal(GameObject plane)
+    public void Refuel()
     {
-        if (plane.TryGetComponent(out SpaceShipAgent spaceAgent))
-            spaceAgent.HealthComponent.HealDamage(spaceAgent.HealthComponent.MAXHEALTH);
+        GameManager manager = GameManager.Instance;
+        manager.RestoreFuel(manager.SaveData.maxFuel);
+        manager.Save();
     }
 }

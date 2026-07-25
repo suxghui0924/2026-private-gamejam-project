@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
 using System.IO;
 using _Scripts.Suxghui.CoreLib;
 using _Scripts.Suxghui.Manager.Module;
 using _Scripts.Suxghui.Manager.Upgrade;
 using _Scripts.Suxghui.Mining;
+using _Scripts.Suxghui.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -17,89 +19,65 @@ namespace _Scripts.Suxghui.Manager
             MainMenu,
             ModuleSelect,
             Upgrade,
-            StarField
+            StarField,
+            Ending
         }
 
-        public interface ISceneState
+        private sealed class EmptySceneState : ISceneState
         {
-            void Enter();
-            void Executor();
-            void Exit();
+            public void Enter() { }
+            public void Executor() { }
+            public void Exit() { }
         }
 
-        public abstract class SceneState : ISceneState
-        {
-            protected SceneState(GameManager manager)
-            {
-                Manager = manager;
-            }
-
-            protected GameManager Manager { get; }
-            public virtual void Enter() { }
-            public virtual void Executor() { }
-            public virtual void Exit() { }
-        }
-
-        public sealed class LoadingScene : SceneState
-        {
-            internal LoadingScene(GameManager manager) : base(manager) { }
-        }
-
-        public sealed class MainMenu : SceneState
-        {
-            internal MainMenu(GameManager manager) : base(manager) { }
-        }
-
-        public sealed class ModuleSelect : SceneState
-        {
-            internal ModuleSelect(GameManager manager) : base(manager) { }
-        }
-
-        public sealed class Upgrade : SceneState
-        {
-            internal Upgrade(GameManager manager) : base(manager) { }
-        }
-
-        public sealed class StarField : SceneState
-        {
-            internal StarField(GameManager manager) : base(manager) { }
-        }
-
-        private sealed class EmptySceneState : SceneState
-        {
-            internal EmptySceneState(GameManager manager) : base(manager) { }
-        }
-
-        private const int CurrentSaveVersion = 2;
+        private const int CurrentSaveVersion = 4;
         private const string SaveFileName = "save.json";
         private const string LoadingSceneName = "LoadingScene";
         private const string MainMenuSceneName = "LSO_MainMenu";
         private const string ModuleSelectSceneName = "LSO_ModuleSelect";
         private const string UpgradeSceneName = "LSO_Upgrade";
         private const string StarFieldSceneName = "StarField";
-        private const string HealthUpgradePath = "Suxghui/Upgrades/HealthUpgrade";
+        private const string EndingSceneName = "EndingScene";
+        private const string FuelUpgradePath = "Suxghui/Upgrades/FuelUpgrade";
         private const string CargoUpgradePath = "Suxghui/Upgrades/CargoUpgrade";
         private const string SpeedUpgradePath = "Suxghui/Upgrades/SpeedUpgrade";
+        private const string DrillTechPath = "Suxghui/Mining/Drill Tech";
+        private const string LaserTechPath = "Suxghui/Mining/Laser Tech";
+        private const string ExtractorTechPath = "Suxghui/Mining/Extractor Tech";
+        private const string EndingSequencePath = "Suxghui/Ending/EndingSequence";
+        private const float RescueMoneyLossRatio = 0.12f;
+        private const float RescueMineralLossRatio = 0.20f;
+        private const int MaximumRescueMoneyLoss = 5000;
 
         public GameSaveData SaveData { get; private set; }
         public WalletModule Wallet { get; private set; }
         public InventoryModule Inventory { get; private set; }
         public ShopModule Shop { get; private set; }
         public MiningTechSelectionModule TechSelection { get; private set; }
-        public HealthUpgradeModule HealthUpgrade { get; private set; }
+        public FuelUpgradeModule FuelUpgrade { get; private set; }
         public CargoUpgradeModule CargoUpgrade { get; private set; }
         public SpeedUpgradeModule SpeedUpgrade { get; private set; }
         public DrillUpgradeModule DrillUpgrade { get; private set; }
         public LaserUpgradeModule LaserUpgrade { get; private set; }
         public ExtractorUpgradeModule ExtractorUpgrade { get; private set; }
+        public ISceneState LoadingSceneState { get; private set; }
+        public ISceneState MainMenuState { get; private set; }
+        public ISceneState ModuleSelectState { get; private set; }
+        public ISceneState UpgradeState { get; private set; }
+        public ISceneState StarFieldState { get; private set; }
+        public ISceneState EndingState { get; private set; }
         public ISceneState CurrentSceneState { get; private set; }
         public SceneType? CurrentSceneType { get; private set; }
         public string SavePath => Path.Combine(Application.persistentDataPath, SaveFileName);
+        public event Action<float, float> FuelChanged;
+        public EndingSequenceSO EndingSequence { get; private set; }
 
         private int _sceneStateSceneHandle = -1;
         private bool _sceneStateInitialized;
         private bool _isSwitchingSceneState;
         private bool _isQuitting;
+        private bool _endingTransitionRequested;
+        private bool _fuelRescueRequested;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -115,9 +93,20 @@ namespace _Scripts.Suxghui.Manager
                 return;
 
             DontDestroyOnLoad(gameObject);
+            InitializeSceneStates();
             Load();
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
             ActivateSceneState(SceneManager.GetActiveScene());
+        }
+
+        private void Start()
+        {
+            // Also evaluate an existing save. MoneyChanged only fires when the
+            // wallet changes, so an already-completed coin goal needs this check.
+            if (Wallet != null)
+                HandleWalletMoneyChanged(Wallet.Money);
+            if (!_endingTransitionRequested && SaveData.fuel <= 0f)
+                HandleFuelDepleted();
         }
 
         private void Update()
@@ -270,11 +259,37 @@ namespace _Scripts.Suxghui.Manager
                 level => SaveMiningTechLevel("extractor", level));
         }
 
-        public void SetCurrentHealth(float health)
+        public float SetFuel(float fuel)
         {
             GameSaveData data = SaveData;
-            data.health = Mathf.Clamp(health, 0f, Mathf.Max(0f, data.maxHealth));
+            float previousFuel = data.fuel;
+            data.fuel = Mathf.Clamp(fuel, 0f, Mathf.Max(0f, data.maxFuel));
             SaveData = data;
+            FuelChanged?.Invoke(data.fuel, data.maxFuel);
+
+            if (previousFuel > 0f && data.fuel <= 0f)
+                HandleFuelDepleted();
+            return data.fuel;
+        }
+
+        public float ConsumeFuel(float amount)
+        {
+            if (amount <= 0f)
+                return 0f;
+
+            float previous = SaveData.fuel;
+            SetFuel(previous - amount);
+            return previous - SaveData.fuel;
+        }
+
+        public float RestoreFuel(float amount)
+        {
+            if (amount <= 0f)
+                return 0f;
+
+            float previous = SaveData.fuel;
+            SetFuel(previous + amount);
+            return SaveData.fuel - previous;
         }
 
         public void SetCargoWeight(float cargoWeight)
@@ -284,8 +299,28 @@ namespace _Scripts.Suxghui.Manager
             SaveData = data;
         }
 
-        public void ChangeSceneState(SceneType targetScene)
+        public ISceneState GetSceneState(SceneType sceneType)
         {
+            return sceneType switch
+            {
+                SceneType.LoadingScene => LoadingSceneState,
+                SceneType.MainMenu => MainMenuState,
+                SceneType.ModuleSelect => ModuleSelectState,
+                SceneType.Upgrade => UpgradeState,
+                SceneType.StarField => StarFieldState,
+                SceneType.Ending => EndingState,
+                _ => throw new ArgumentOutOfRangeException(nameof(sceneType), sceneType, null)
+            };
+        }
+
+        public void ChangeSceneState(ISceneState nextState)
+        {
+            if (!TryGetRegisteredSceneType(nextState, out SceneType targetScene))
+            {
+                Debug.LogError("GameManager에 등록된 씬 상태만 ChangeSceneState에 전달할 수 있습니다.", this);
+                return;
+            }
+
             if (targetScene == SceneType.LoadingScene)
             {
                 Debug.LogWarning("LoadingScene은 목적지가 아니라 다른 씬으로 이동할 때 자동으로 사용됩니다.", this);
@@ -305,6 +340,18 @@ namespace _Scripts.Suxghui.Manager
             global::LoadingSceneController.LoadScene(targetSceneName);
         }
 
+        public void ReloadSceneState(ISceneState state)
+        {
+            if (!TryGetRegisteredSceneType(state, out SceneType targetScene) ||
+                targetScene == SceneType.LoadingScene)
+            {
+                Debug.LogError("ReloadSceneState requires a registered destination scene state.", this);
+                return;
+            }
+
+            global::LoadingSceneController.LoadScene(GetUnitySceneName(targetScene));
+        }
+
         private void HandleActiveSceneChanged(Scene previousScene, Scene nextScene)
         {
             ActivateSceneState(nextScene);
@@ -320,10 +367,12 @@ namespace _Scripts.Suxghui.Manager
             _isSwitchingSceneState = true;
             try
             {
-                ISceneState nextState = CreateSceneState(scene.name, out SceneType? sceneType);
+                ISceneState nextState = FindSceneState(scene.name, out SceneType? sceneType);
                 ApplySceneState(nextState, sceneType);
                 _sceneStateSceneHandle = scene.handle;
                 _sceneStateInitialized = true;
+                if (sceneType == SceneType.StarField && SaveData.fuel > 0f)
+                    _fuelRescueRequested = false;
             }
             finally
             {
@@ -333,9 +382,6 @@ namespace _Scripts.Suxghui.Manager
 
         private void ApplySceneState(ISceneState nextState, SceneType? sceneType)
         {
-            if (ReferenceEquals(CurrentSceneState, nextState))
-                return;
-
             if (IsStateAlive(CurrentSceneState))
             {
                 try
@@ -366,30 +412,66 @@ namespace _Scripts.Suxghui.Manager
             }
         }
 
-        private ISceneState CreateSceneState(string unitySceneName, out SceneType? sceneType)
+        private ISceneState FindSceneState(string unitySceneName, out SceneType? sceneType)
         {
             switch (unitySceneName)
             {
                 case LoadingSceneName:
                     sceneType = SceneType.LoadingScene;
-                    return new LoadingScene(this);
+                    return LoadingSceneState;
                 case MainMenuSceneName:
                     sceneType = SceneType.MainMenu;
-                    return new MainMenu(this);
+                    return MainMenuState;
                 case ModuleSelectSceneName:
                     sceneType = SceneType.ModuleSelect;
-                    return new ModuleSelect(this);
+                    return ModuleSelectState;
                 case UpgradeSceneName:
                     sceneType = SceneType.Upgrade;
-                    return new Upgrade(this);
+                    return UpgradeState;
                 case StarFieldSceneName:
                 case "LSO_StarField":
                     sceneType = SceneType.StarField;
-                    return new StarField(this);
+                    return StarFieldState;
+                case EndingSceneName:
+                    sceneType = SceneType.Ending;
+                    return EndingState;
                 default:
                     sceneType = null;
-                    return new EmptySceneState(this);
+                    return new EmptySceneState();
             }
+        }
+
+        private void InitializeSceneStates()
+        {
+            LoadingSceneState = new LoadingSceneState(this);
+            MainMenuState = new MainMenuState(this);
+            ModuleSelectState = new ModuleSelectState(this);
+            UpgradeState = new UpgradeState(this);
+            StarFieldState = new StarFieldState(this);
+            EndingState = new EndingSceneState(this);
+        }
+
+        private bool TryGetRegisteredSceneType(ISceneState state, out SceneType sceneType)
+        {
+            if (ReferenceEquals(state, LoadingSceneState))
+                sceneType = SceneType.LoadingScene;
+            else if (ReferenceEquals(state, MainMenuState))
+                sceneType = SceneType.MainMenu;
+            else if (ReferenceEquals(state, ModuleSelectState))
+                sceneType = SceneType.ModuleSelect;
+            else if (ReferenceEquals(state, UpgradeState))
+                sceneType = SceneType.Upgrade;
+            else if (ReferenceEquals(state, StarFieldState))
+                sceneType = SceneType.StarField;
+            else if (ReferenceEquals(state, EndingState))
+                sceneType = SceneType.Ending;
+            else
+            {
+                sceneType = default;
+                return false;
+            }
+
+            return true;
         }
 
         private static string GetUnitySceneName(SceneType sceneType)
@@ -401,6 +483,7 @@ namespace _Scripts.Suxghui.Manager
                 SceneType.ModuleSelect => ModuleSelectSceneName,
                 SceneType.Upgrade => UpgradeSceneName,
                 SceneType.StarField => StarFieldSceneName,
+                SceneType.Ending => EndingSceneName,
                 _ => throw new ArgumentOutOfRangeException(nameof(sceneType), sceneType, null)
             };
         }
@@ -425,6 +508,8 @@ namespace _Scripts.Suxghui.Manager
         protected override void OnDestroy()
         {
             SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
+            if (Wallet != null)
+                Wallet.MoneyChanged -= HandleWalletMoneyChanged;
             if (!_isQuitting && IsStateAlive(CurrentSceneState))
                 CurrentSceneState.Exit();
             CurrentSceneState = null;
@@ -434,7 +519,14 @@ namespace _Scripts.Suxghui.Manager
 
         private void InitializeModules()
         {
+            if (Wallet != null)
+                Wallet.MoneyChanged -= HandleWalletMoneyChanged;
+
+            EndingSequence = Resources.Load<EndingSequenceSO>(EndingSequencePath);
+            _endingTransitionRequested = false;
+            _fuelRescueRequested = false;
             Wallet = new WalletModule(SaveData.money);
+            Wallet.MoneyChanged += HandleWalletMoneyChanged;
             Inventory = new InventoryModule(SaveData.inventoryItems);
             Shop = new ShopModule(Wallet, Inventory);
             TechSelection = new MiningTechSelectionModule(
@@ -444,15 +536,15 @@ namespace _Scripts.Suxghui.Manager
                     : SaveData.currentMiningToolId,
                 HandleMiningTechSelection);
 
-            ShipStatUpgradeSO healthSettings = Resources.Load<ShipStatUpgradeSO>(HealthUpgradePath);
+            ShipStatUpgradeSO fuelSettings = Resources.Load<ShipStatUpgradeSO>(FuelUpgradePath);
             ShipStatUpgradeSO cargoSettings = Resources.Load<ShipStatUpgradeSO>(CargoUpgradePath);
             ShipStatUpgradeSO speedSettings = Resources.Load<ShipStatUpgradeSO>(SpeedUpgradePath);
 
-            HealthUpgrade = new HealthUpgradeModule(
+            FuelUpgrade = new FuelUpgradeModule(
                 Wallet,
-                healthSettings,
-                SaveData.healthLevel,
-                HandleHealthUpgrade);
+                fuelSettings,
+                SaveData.fuelLevel,
+                HandleFuelUpgrade);
             CargoUpgrade = new CargoUpgradeModule(
                 Wallet,
                 cargoSettings,
@@ -464,11 +556,121 @@ namespace _Scripts.Suxghui.Manager
                 SaveData.shipSpeedLevel,
                 HandleSpeedUpgrade);
 
-            DrillUpgrade = null;
-            LaserUpgrade = null;
-            ExtractorUpgrade = null;
+            ConfigureMiningTechUpgrades(
+                Resources.Load<MiningTechDefinitionSO>(DrillTechPath),
+                Resources.Load<MiningTechDefinitionSO>(LaserTechPath),
+                Resources.Load<MiningTechDefinitionSO>(ExtractorTechPath));
 
             SynchronizeUpgradeValues();
+        }
+
+        private void HandleWalletMoneyChanged(int currentMoney)
+        {
+            int requiredCoins = EndingSequence != null
+                ? EndingSequence.RequiredCoins
+                : 100000;
+
+            if (_endingTransitionRequested || SaveData.endingReached || currentMoney < requiredCoins)
+                return;
+
+            _endingTransitionRequested = true;
+            GameSaveData data = SaveData;
+            data.endingReached = true;
+            SaveData = data;
+            Save();
+            ChangeSceneState(EndingState);
+        }
+
+        private void HandleFuelDepleted()
+        {
+            string sceneName = SceneManager.GetActiveScene().name;
+            bool isStarField = string.Equals(sceneName, StarFieldSceneName, StringComparison.Ordinal) ||
+                               string.Equals(sceneName, "LSO_StarField", StringComparison.Ordinal);
+            if (_fuelRescueRequested || _endingTransitionRequested || !isStarField)
+                return;
+
+            _fuelRescueRequested = true;
+
+            int currentMoney = Wallet?.Money ?? 0;
+            int moneyLoss = Mathf.Min(
+                currentMoney,
+                Mathf.Min(MaximumRescueMoneyLoss,
+                    Mathf.CeilToInt(currentMoney * RescueMoneyLossRatio)));
+            if (moneyLoss > 0)
+                Wallet.TrySpendMoney(moneyLoss);
+
+            int mineralLoss = 0;
+            int remainingCargo = 0;
+            if (Inventory != null)
+            {
+                InventoryItemSaveData[] items = Inventory.ToSaveData();
+                int totalCargo = 0;
+                for (int i = 0; i < items.Length; i++)
+                {
+                    InventoryItemSaveData item = items[i];
+                    if (item.itemId && item.amount > 0)
+                        totalCargo += item.amount;
+                }
+
+                int targetLoss = Mathf.CeilToInt(totalCargo * RescueMineralLossRatio);
+                int[] plannedLosses = new int[items.Length];
+                int lossStillNeeded = targetLoss;
+
+                for (int i = 0; i < items.Length && lossStillNeeded > 0; i++)
+                {
+                    if (!items[i].itemId || items[i].amount <= 0)
+                        continue;
+                    int proportionalLoss = Mathf.Min(
+                        items[i].amount,
+                        Mathf.FloorToInt(items[i].amount * RescueMineralLossRatio));
+                    plannedLosses[i] = proportionalLoss;
+                    lossStillNeeded -= proportionalLoss;
+                }
+
+                while (lossStillNeeded > 0)
+                {
+                    bool assignedAny = false;
+                    for (int i = 0; i < items.Length && lossStillNeeded > 0; i++)
+                    {
+                        if (!items[i].itemId || plannedLosses[i] >= items[i].amount)
+                            continue;
+                        plannedLosses[i]++;
+                        lossStillNeeded--;
+                        assignedAny = true;
+                    }
+
+                    if (!assignedAny)
+                        break;
+                }
+
+                for (int i = 0; i < items.Length; i++)
+                {
+                    int loss = plannedLosses[i];
+                    if (loss > 0 && Inventory.TryRemoveItem(items[i].itemId, loss))
+                    {
+                        mineralLoss += loss;
+                    }
+                }
+
+                remainingCargo = Mathf.Max(0, totalCargo - mineralLoss);
+            }
+
+            SetCargoWeight(remainingCargo);
+            RestoreFuel(SaveData.maxFuel);
+            Save();
+
+            Debug.Log(
+                $"[Fuel Rescue] Fuel restored. Cost: {moneyLoss} coins, {mineralLoss}kg minerals.",
+                this);
+            StartCoroutine(ReloadStarFieldAfterFuelRescue());
+        }
+
+        private IEnumerator ReloadStarFieldAfterFuelRescue()
+        {
+            // Let the movement/collision callback that consumed the final fuel
+            // finish before unloading its scene objects.
+            yield return new WaitForEndOfFrame();
+            ReloadSceneState(StarFieldState);
         }
 
         private void SaveMiningTechLevel(string techId, int level)
@@ -483,14 +685,18 @@ namespace _Scripts.Suxghui.Manager
             Save();
         }
 
-        private void HandleHealthUpgrade(int level, float value)
+        private void HandleFuelUpgrade(int level, float value)
         {
             GameSaveData data = SaveData;
-            float previousMaximum = Mathf.Max(0f, data.maxHealth);
-            data.healthLevel = level;
-            data.maxHealth = value;
-            data.health = Mathf.Clamp(data.health + Mathf.Max(0f, value - previousMaximum), 0f, value);
+            float previousMaximum = Mathf.Max(0f, data.maxFuel);
+            data.fuelLevel = level;
+            data.maxFuel = Mathf.Max(1f, value);
+            data.fuel = Mathf.Clamp(
+                data.fuel + Mathf.Max(0f, data.maxFuel - previousMaximum),
+                0f,
+                data.maxFuel);
             SaveData = data;
+            FuelChanged?.Invoke(data.fuel, data.maxFuel);
             Save();
         }
 
@@ -517,11 +723,11 @@ namespace _Scripts.Suxghui.Manager
         {
             GameSaveData data = SaveData;
 
-            if (HealthUpgrade?.Settings != null)
+            if (FuelUpgrade?.Settings != null)
             {
-                data.healthLevel = HealthUpgrade.Level;
-                data.maxHealth = HealthUpgrade.CurrentValue;
-                data.health = Mathf.Clamp(data.health, 0f, data.maxHealth);
+                data.fuelLevel = FuelUpgrade.Level;
+                data.maxFuel = Mathf.Max(1f, FuelUpgrade.CurrentValue);
+                data.fuel = Mathf.Clamp(data.fuel, 0f, data.maxFuel);
             }
             if (CargoUpgrade?.Settings != null)
             {
@@ -542,15 +748,28 @@ namespace _Scripts.Suxghui.Manager
         {
             if (data.saveVersion < 2)
             {
-                data.maxHealth = data.maxHealth > 0f ? data.maxHealth : 100f;
-                data.health = data.health > 0f ? Mathf.Min(data.health, data.maxHealth) : data.maxHealth;
                 data.maxCargoWeight = 20f;
                 data.cargoWeight = Mathf.Clamp(data.cargoWeight, 0f, data.maxCargoWeight);
                 data.shipSpeed = 10f;
             }
 
-            data.maxFuel = data.maxFuel > 0f ? data.maxFuel : 100f;
-            data.fuel = Mathf.Clamp(data.fuel > 0f ? data.fuel : data.maxFuel, 0f, data.maxFuel);
+            if (data.saveVersion < 3 && data.fuelLevel == 0 &&
+                data.maxFuel > 0f && data.maxFuel < 120f)
+            {
+                float fuelRatio = Mathf.Clamp01(data.fuel / data.maxFuel);
+                data.maxFuel = 120f;
+                data.fuel = data.maxFuel * fuelRatio;
+            }
+
+            if (data.maxFuel <= 0f)
+            {
+                data.maxFuel = 120f;
+                data.fuel = data.maxFuel;
+            }
+            else
+            {
+                data.fuel = Mathf.Clamp(data.fuel, 0f, data.maxFuel);
+            }
             data.saveVersion = CurrentSaveVersion;
         }
     }

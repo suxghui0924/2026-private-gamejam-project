@@ -48,6 +48,7 @@ namespace _Scripts.LHS.Radar
         {
             RadarTarget.Added += RegisterTarget;
             RadarTarget.Removed += UnregisterTarget;
+            RadarTarget.Changed += RefreshTarget;
 
             foreach (RadarTarget target in RadarTarget.Targets)
             {
@@ -59,6 +60,7 @@ namespace _Scripts.LHS.Radar
         {
             RadarTarget.Added -= RegisterTarget;
             RadarTarget.Removed -= UnregisterTarget;
+            RadarTarget.Changed -= RefreshTarget;
 
             foreach (BlipState state in _blips.Values)
             {
@@ -251,6 +253,15 @@ namespace _Scripts.LHS.Radar
             {
                 Destroy(state.View.gameObject);
             }
+        }
+
+        private void RefreshTarget(RadarTarget target)
+        {
+            if (target == null || !_blips.TryGetValue(target, out BlipState state))
+                return;
+
+            if (state.View != null)
+                state.View.Initialize(target);
         }
 
 #if UNITY_EDITOR

@@ -16,13 +16,13 @@ MonoBehaviour:
   levels:
   - value: 10
     upgradeCost: 0
-  - value: 12
-    upgradeCost: 600
-  - value: 14
-    upgradeCost: 1200
-  - value: 16.5
-    upgradeCost: 2200
-  - value: 19
-    upgradeCost: 3600
-  - value: 22
-    upgradeCost: 6000
+  - value: 11.5
+    upgradeCost: 1500
+  - value: 13
+    upgradeCost: 4000
+  - value: 14.5
+    upgradeCost: 8500
+  - value: 16.25
+    upgradeCost: 15000
+  - value: 18
+    upgradeCost: 24000

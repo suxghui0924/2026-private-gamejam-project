@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using _Scripts.Suxghui.Agent;
+using _Scripts.Suxghui.Manager;
 using _Scripts.Suxghui.Player.Input;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -14,6 +15,7 @@ namespace _Scripts.Suxghui.Player
 
         /// <summary>플레이어가 설정한 기본 쓰로틀 (0~1). 부스터 오버플로우는 제외.</summary>
         public float Throttle01 => Mathf.Clamp01(_throttle01);
+        public float ThrottleAmount => Mathf.Max(0f, _forwardSpeedFactor);
 
         /// <summary>실제 반영되는 쓰로틀 퍼센트. 부스터 오버플로우 포함(예: 120%). UI 텍스트용.</summary>
         public float ThrottlePercent => _forwardSpeedFactor * 100f;
@@ -32,6 +34,12 @@ namespace _Scripts.Suxghui.Player
         [Tooltip("W/S로 쓰로틀이 초당 얼마나 변하는지(0~1 기준). 0.5면 0%→100%까지 약 2초.")]
         [SerializeField, Min(0.01f)] private float throttleChangeRate = 0.5f;
         [SerializeField] private bool hideCursorOnEnable = true;
+
+        [Header("Fuel")]
+        [Tooltip("Fuel consumed per second while flying at 100% throttle.")]
+        [SerializeField, Min(0f)] private float fuelConsumptionPerSecondAtFullThrottle = 0.8f;
+        [Tooltip("Additional fuel multiplier while the booster is active.")]
+        [SerializeField, Min(1f)] private float boosterFuelMultiplier = 1.8f;
 
         [Header("Camera Feel")]
         [SerializeField] private CinemachineCamera cinemaCamera;
@@ -71,6 +79,8 @@ namespace _Scripts.Suxghui.Player
         protected override void Awake()
         {
             base.Awake();
+            if (GetComponent<ShipUpgradeRuntime>() == null)
+                gameObject.AddComponent<ShipUpgradeRuntime>();
             TryCacheCamera();
             TryCacheVisualRoot();
             _initialShipRotation = transform.localRotation;
@@ -144,6 +154,14 @@ namespace _Scripts.Suxghui.Player
                 targetSpeedFactor,
                 throttleResponse * deltaTime);
 
+            if (!ConsumeMovementFuel(deltaTime))
+            {
+                _throttle01 = 0f;
+                _forwardSpeedFactor = 0f;
+                MovementComponent.Stop();
+                return;
+            }
+
             // This prefab's nose points along local -Y. Keep the direction a unit vector and pass the
             // throttle factor (can exceed 1 during a booster overflow, e.g. 1.2) as the speed
             // multiplier: MovmentComponent clamps each direction component to 0~1, so routing the
@@ -151,6 +169,23 @@ namespace _Scripts.Suxghui.Player
             // is applied after that clamp and stays uncapped.
             Vector3 direction = -ship.up;
             MovementComponent.Move(direction, _forwardSpeedFactor, deltaTime);
+        }
+
+        private bool ConsumeMovementFuel(float deltaTime)
+        {
+            float throttle = Mathf.Abs(_forwardSpeedFactor);
+            if (throttle <= 0.0001f || fuelConsumptionPerSecondAtFullThrottle <= 0f)
+                return true;
+
+            GameManager manager = GameManager.Instance;
+            if (manager == null)
+                return true;
+
+            float boosterMultiplier = _boosterInput ? boosterFuelMultiplier : 1f;
+            float requestedFuel = fuelConsumptionPerSecondAtFullThrottle * throttle *
+                                  boosterMultiplier * Mathf.Max(0f, deltaTime);
+            float consumedFuel = manager.ConsumeFuel(requestedFuel);
+            return consumedFuel + 0.0001f >= requestedFuel;
         }
 
         private void OnDisable()

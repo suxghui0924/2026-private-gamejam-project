@@ -55,7 +55,8 @@ public class LSO_ButtonScale : MonoBehaviour,
     public void OnPointerDown(PointerEventData eventData)
     {
         if (eventData.button != PointerEventData.InputButton.Left) return;
-        SoundManager.Instance.Play(SoundType.UI,"Click01");
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.Play(SoundType.UI,"Click01");
         _isPressed = true;
         AnimateTo(pressScale, pressDuration, pressEase);
     }

@@ -30,7 +30,7 @@ namespace _Scripts.LSO
             int result = 0;
             foreach (var slot in targetInventory)
             {
-                result += slot.Value * slot.Key.mineralPrice;
+                result += slot.Value * slot.Key.PricePerKilogram;
             }
             return result;
         }

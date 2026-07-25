@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using _Scripts.Suxghui.Manager;
 using _Scripts.Suxghui.World;
 using UnityEngine;
 
@@ -15,6 +16,7 @@ namespace _Scripts.Suxghui.Player
         [Header("Stone Collision")]
         [SerializeField] private GameObject stoneImpactVfxPrefab;
         [SerializeField, Min(0f)] private float stoneKnockbackForce = 12f;
+        [SerializeField, Min(0f)] private float stoneFuelDamage = 8f;
         [SerializeField, Min(0.01f)] private float stoneImpactVfxLifetime = 2.5f;
         [SerializeField, Min(0.01f)] private float stoneImpactVfxScale = 0.35f;
 
@@ -81,6 +83,7 @@ namespace _Scripts.Suxghui.Player
 
             SpawnVfx(stoneImpactVfxPrefab, collisionPoint, awayFromStone);
             ApplyKnockback(awayFromStone, stoneKnockbackForce);
+            ConsumeFuel(stoneFuelDamage);
         }
 
         public void ApplyKnockback(Vector3 direction, float force)
@@ -91,6 +94,12 @@ namespace _Scripts.Suxghui.Player
             _knockbackVelocity = Vector3.ClampMagnitude(
                 _knockbackVelocity + direction.normalized * force,
                 maximumKnockbackSpeed);
+        }
+
+        public float ConsumeFuel(float amount)
+        {
+            GameManager manager = GameManager.Instance;
+            return manager != null ? manager.ConsumeFuel(Mathf.Max(0f, amount)) : 0f;
         }
 
         private bool CanRespondTo(GameObject source)

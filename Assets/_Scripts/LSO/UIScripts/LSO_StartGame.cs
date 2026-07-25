@@ -7,6 +7,7 @@ public class LSO_StartGame : MonoBehaviour
 
     public void StartGame()
     {
-        GameManager.Instance.ChangeSceneState(targetScene);
+        GameManager manager = GameManager.Instance;
+        manager.ChangeSceneState(manager.GetSceneState(targetScene));
     }
 }

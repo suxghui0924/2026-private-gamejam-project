@@ -31,8 +31,13 @@ namespace _Scripts.LHS.SoundManager
         private string MakeKey(SoundType type, string ID) => $"{type}_{ID}";
 
         public void Play(SoundType type, string id)
+        {
+            Play(database, type, id);
+        }
+
+        public void Play(SoundDataBaseSO sourceDatabase, SoundType type, string id)
 {
-    if (database == null)
+    if (sourceDatabase == null)
     {
         Debug.LogError("[SoundManager] SoundDataBaseSO가 할당되지 않았습니다.", this);
         return;
@@ -44,13 +49,13 @@ namespace _Scripts.LHS.SoundManager
         return;
     }
 
-    var info = database.GetSound(type, id);
+    var info = sourceDatabase.GetSound(type, id);
 
     if (info == null)
     {
         Debug.LogError(
             $"[SoundManager] 사운드를 찾지 못했습니다. Type: {type}, ID: {id}",
-            database);
+            sourceDatabase);
         return;
     }
 
@@ -58,7 +63,7 @@ namespace _Scripts.LHS.SoundManager
     {
         Debug.LogError(
             $"[SoundManager] AudioSource 프리팹이 없습니다. Type: {type}, ID: {id}",
-            database);
+            sourceDatabase);
         return;
     }
 
@@ -66,7 +71,7 @@ namespace _Scripts.LHS.SoundManager
     {
         Debug.LogError(
             $"[SoundManager] AudioClip이 없습니다. Type: {type}, ID: {id}",
-            database);
+            sourceDatabase);
         return;
     }
 

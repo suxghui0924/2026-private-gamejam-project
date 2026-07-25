@@ -57,7 +57,7 @@ namespace _Scripts.Suxghui.Mining
 
         private void FixedUpdate()
         {
-            if (_nearbyPickups.Count == 0)
+            if (_nearbyPickups.Count == 0 || GetRemainingCargoCapacity() <= 0)
                 return;
 
             _iterationBuffer.Clear();
@@ -87,6 +87,9 @@ namespace _Scripts.Suxghui.Mining
 
         private void Track(Collider other)
         {
+            if (GetRemainingCargoCapacity() <= 0)
+                return;
+
             MineralPickup pickup = ResolvePickup(other);
             if (pickup != null && pickup.IsCollectible && _nearbyPickups.Add(pickup))
                 _suctionStartedAt[pickup] = Time.time;
@@ -100,9 +103,7 @@ namespace _Scripts.Suxghui.Mining
                 (!synchronizePersistentInventory || gameManager?.Inventory == null))
                 return;
 
-            int capacity = _cargoWeight != null
-                ? _cargoWeight.RemainingCapacity
-                : int.MaxValue;
+            int capacity = GetRemainingCargoCapacity();
             int taken = pickup.Take(capacity);
             if (taken <= 0)
                 return;
@@ -134,7 +135,7 @@ namespace _Scripts.Suxghui.Mining
                 : _playerInventory != null && _playerInventory.PlayerInventory.TryGetValue(mineral, out int amount)
                     ? amount
                     : taken;
-            Debug.Log($"[원석 획득] {mineralName} x{taken} (보유: {totalAmount}) - SaveData 동기화 완료", this);
+            Debug.Log($"[원석 획득] {mineralName} {taken}kg (보유: {totalAmount}kg) - SaveData 동기화 완료", this);
 
             if (pickup.Amount > 0)
                 return;
@@ -157,6 +158,23 @@ namespace _Scripts.Suxghui.Mining
             // Collection distance is deliberately world-space. Collectible ore colliders are
             // triggers, so they can visibly pass through the hull before reaching this point.
             return Mathf.Max(0.01f, collectDistance);
+        }
+
+        private int GetRemainingCargoCapacity()
+        {
+            CacheInventory();
+
+            int uiCapacity = _cargoWeight != null
+                ? _cargoWeight.RemainingCapacity
+                : int.MaxValue;
+
+            GameManager manager = GameManager.Instance;
+            int persistentCapacity = manager != null
+                ? Mathf.Max(0, Mathf.FloorToInt(
+                    manager.SaveData.maxCargoWeight - manager.SaveData.cargoWeight))
+                : int.MaxValue;
+
+            return Mathf.Min(uiCapacity, persistentCapacity);
         }
 
         private static MineralPickup ResolvePickup(Collider other)

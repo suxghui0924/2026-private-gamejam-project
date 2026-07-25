@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using _Scripts.LHS.Radar;
 using _Scripts.LSO.Data;
 using _Scripts.Suxghui.Mining;
 using UnityEngine;
@@ -125,9 +126,13 @@ namespace _Scripts.Suxghui.World
         [SerializeField] private string runtimeContainerName = "RuntimeZoneSpawns";
         [SerializeField] private bool hideSceneTemplatesAtRuntime = true;
 
+        [Header("Stone Radar")]
+        [SerializeField] private Sprite stoneRadarIcon;
+
         [Header("Mine Hazard")]
         [SerializeField] private GameObject mineExplosionVfxPrefab;
         [SerializeField, Min(0f)] private float mineKnockbackForce = 75f;
+        [SerializeField, Min(0f)] private float mineFuelDamage = 24f;
         [SerializeField, Min(0.01f)] private float mineExplosionVfxLifetime = 2.5f;
         [SerializeField, Min(0.01f)] private float mineExplosionVfxScale = 1f;
 
@@ -613,7 +618,7 @@ namespace _Scripts.Suxghui.World
             return remainingCooldown < 0f ? -1f : Time.time + remainingCooldown;
         }
 
-        private static void ConfigureStone(
+        private void ConfigureStone(
             GameObject instance,
             LSO_OreSO oreDefinition,
             ZoneSpawnRule rule)
@@ -631,7 +636,22 @@ namespace _Scripts.Suxghui.World
                                        instance.AddComponent<MineableAsteroid>();
             mineable.ConfigureOre(ore);
 
+            RadarTarget radarTarget = instance.GetComponent<RadarTarget>() ??
+                                      instance.AddComponent<RadarTarget>();
+            radarTarget.Configure(stoneRadarIcon, GetStoneRadarColor(rule.zoneType));
+
             ScatterExternalOres(instance, contents, rule, oreDefinition);
+        }
+
+        private static Color GetStoneRadarColor(ZoneType zoneType)
+        {
+            return zoneType switch
+            {
+                ZoneType.Normal => new Color(0f, 1f, 0f, 1f),
+                ZoneType.Classified => new Color(1f, 1f, 0f, 1f),
+                ZoneType.TopSecret => new Color(1f, 0f, 0f, 1f),
+                _ => Color.white
+            };
         }
 
         private void ConfigureMine(GameObject instance)
@@ -647,6 +667,7 @@ namespace _Scripts.Suxghui.World
             mine.Configure(
                 mineExplosionVfxPrefab,
                 mineKnockbackForce,
+                mineFuelDamage,
                 mineExplosionVfxLifetime,
                 mineExplosionVfxScale);
         }
@@ -1012,7 +1033,7 @@ namespace _Scripts.Suxghui.World
             if (clampedBias <= 0f)
                 return 1f;
 
-            float normalizedPrice = Mathf.Max(0.1f, mineral.mineralPrice / 100f);
+            float normalizedPrice = Mathf.Max(0.1f, mineral.PricePerKilogram / 100f);
             return Mathf.Pow(normalizedPrice, clampedBias);
         }
 

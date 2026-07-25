@@ -21,8 +21,6 @@ namespace _Scripts.Suxghui.Manager
     {
         public int saveVersion;
         public int money;
-        public float health;
-        public float maxHealth;
         public float fuel;
         public float maxFuel;
         public float cargoWeight;
@@ -36,9 +34,9 @@ namespace _Scripts.Suxghui.Manager
         public int analysisRadarLevel;
         public int shipSpeedLevel;
         public int cargoLevel;
-        public int healthLevel;
         public int fuelLevel;
         public int boosterLevel;
+        public bool endingReached;
         public string currentMiningToolId;
         public InventoryItemSaveData[] inventoryItems;
 
@@ -46,12 +44,10 @@ namespace _Scripts.Suxghui.Manager
         {
             return new GameSaveData
             {
-                saveVersion = 2,
+                saveVersion = 3,
                 money = 0,
-                health = 100f,
-                maxHealth = 100f,
-                fuel = 100f,
-                maxFuel = 100f,
+                fuel = 120f,
+                maxFuel = 120f,
                 cargoWeight = 0f,
                 maxCargoWeight = 20f,
                 shipSpeed = 10f,
@@ -63,9 +59,9 @@ namespace _Scripts.Suxghui.Manager
                 analysisRadarLevel = 0,
                 shipSpeedLevel = 0,
                 cargoLevel = 0,
-                healthLevel = 0,
                 fuelLevel = 0,
                 boosterLevel = 0,
+                endingReached = false,
                 currentMiningToolId = string.Empty,
                 inventoryItems = Array.Empty<InventoryItemSaveData>()
             };

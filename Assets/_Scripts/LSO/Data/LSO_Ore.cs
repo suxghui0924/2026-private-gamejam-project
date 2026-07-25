@@ -117,7 +117,7 @@ namespace _Scripts.LSO.Data
             }
 
             LSO_MineralSO mineral = oreSO.mineral;
-            Debug.Log($"{mineral.mineralType}을(를) 채굴하여 {mineral.mineralPrice}를 얻었습니다!", this);
+            Debug.Log($"{mineral.mineralType} 1kg을 채굴했습니다. kg당 가격: {mineral.PricePerKilogram}", this);
             PlayConfiguredBreakFeedback();
 
             return mineral;

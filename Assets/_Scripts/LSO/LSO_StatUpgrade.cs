@@ -3,6 +3,7 @@ using _Scripts.Suxghui.Manager;
 using _Scripts.Suxghui.Manager.Module;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace _Scripts.LSO
 {
@@ -19,6 +20,19 @@ namespace _Scripts.LSO
         private int _maxLevel;
         private bool _canUpgrade;
         private ShipStatUpgradeModule _boundModule;
+        private Button _button;
+
+        private void Awake()
+        {
+            _button = GetComponent<Button>();
+            if (_button != null)
+                _button.onClick.AddListener(Upgrade);
+        }
+
+        private void Start()
+        {
+            RefreshState();
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -37,6 +51,12 @@ namespace _Scripts.LSO
         private void OnDisable()
         {
             UnbindModule();
+        }
+
+        private void OnDestroy()
+        {
+            if (_button != null)
+                _button.onClick.RemoveListener(Upgrade);
         }
 
         private void RefreshState()
@@ -88,7 +108,7 @@ namespace _Scripts.LSO
             return statType switch
             {
                 LSO_StatTypes.Speed => manager.SpeedUpgrade,
-                LSO_StatTypes.Fuel => manager.HealthUpgrade,
+                LSO_StatTypes.Fuel => manager.FuelUpgrade,
                 LSO_StatTypes.Capacity => manager.CargoUpgrade,
                 _ => null
             };
@@ -108,7 +128,8 @@ namespace _Scripts.LSO
             {
                 levelText.text = "-";
                 costText.text = "";
-                icon.SetActive(false);
+                if (icon != null)
+                    icon.SetActive(false);
                 return;
             }
 
@@ -116,12 +137,15 @@ namespace _Scripts.LSO
             {
                 levelText.text = maxText;
                 costText.text = "";
-                icon.SetActive(false);
+                if (icon != null)
+                    icon.SetActive(false);
                 return;
             }
 
             levelText.text = _level.ToString();
             costText.text = _price.ToString();
+            if (icon != null)
+                icon.SetActive(true);
         }
 
         public void Upgrade()

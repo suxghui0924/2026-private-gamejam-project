@@ -16,5 +16,5 @@ MonoBehaviour:
   mineralName: "\uB77C\uB2E4\uB9CC\uB2E4\uC774\uD2B8"
   mineralMaterial: {fileID: 2100000, guid: d8a1f0c25e184a9b98c4c045cb41a00d, type: 2}
   mineralDescription: "\uC5B4\uB460\uC758 \uB3CC \uB290\uB08C\uC744 \uAC00\uC9C4 \uC5B4\uB450\uC6B4 \uBCF4\uB77C\uC0C9 \uAD11\uBB3C"
-  mineralPrice: 360
+  mineralPrice: 480
   mineralRarity: 3
