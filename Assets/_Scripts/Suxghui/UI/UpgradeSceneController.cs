@@ -122,20 +122,6 @@ namespace _Scripts.Suxghui.UI
             for (int i = 0; i < _techRelays.Length; i++)
                 if (_techRelays[i] != null)
                     _techRelays[i].Bind(UpgradeCurrentTech);
-
-            // Also register a real Button listener. The scene art is Image-only
-            // in some variants, so the inspector OnClick list may be empty.
-            BindDirectButton(primaryRoot);
-            BindDirectButton(overlayRoot);
-        }
-
-        private void BindDirectButton(Transform target)
-        {
-            if (target == null) return;
-            Button button = target.GetComponent<Button>() ?? target.GetComponentInChildren<Button>(true);
-            if (button == null) return;
-            button.onClick.RemoveListener(UpgradeCurrentTech);
-            button.onClick.AddListener(UpgradeCurrentTech);
         }
 
         private static TechUpgradeClickRelay EnsureRelay(Transform target)
@@ -173,12 +159,6 @@ namespace _Scripts.Suxghui.UI
             }
 
             bool upgraded = module.TryUpgrade();
-            if (upgraded)
-                NotificationManager.Notify($"{module.Settings.DisplayName} 업그레이드 성공 (Lv.{module.Level})");
-            else if (module.CanUpgrade)
-                NotificationManager.Notify($"업그레이드 실패: {Mathf.Max(0, module.NextUpgradeCost - _manager.Wallet.Money)} 코인 부족");
-            else
-                NotificationManager.Notify("이미 최대 레벨입니다");
             Debug.Log(upgraded
                 ? $"[Upgrade] {module.Settings.DisplayName} upgraded to level {module.Level}."
                 : $"[Upgrade] Cannot upgrade {module.Settings.DisplayName}: insufficient coins or max level.", this);

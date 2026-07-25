@@ -140,14 +140,6 @@ namespace _Scripts.Suxghui.Mining
             if (scorchedOverride != null)
                 scorchedMineralOverride = scorchedOverride;
 
-            // Higher-value minerals represent denser deposits and take longer
-            // to mine. Keep the inspector value as the baseline for common ore.
-            int price = oreSource != null && oreSource.oreSO != null && oreSource.oreSO.mineral != null
-                ? oreSource.oreSO.mineral.PricePerKilogram
-                : 0;
-            if (price > 0)
-                durabilityPerDrop = 100f * Mathf.Clamp(0.75f + price / 250f, 0.75f, 4f);
-
             CacheReferences();
         }
 

@@ -1,6 +1,4 @@
 using _Scripts.Suxghui.Player;
-using _Scripts.LHS.Sound;
-using _Scripts.LHS.SoundManager;
 using UnityEngine;
 
 namespace _Scripts.Suxghui.World
@@ -36,8 +34,6 @@ namespace _Scripts.Suxghui.World
                 return;
 
             _detonated = true;
-            if (SoundManager.Instance != null)
-                SoundManager.Instance.Play(SoundType.SFX, "Explosion2");
             Vector3 awayFromMine = ship.ShipPosition - transform.position;
             if (awayFromMine.sqrMagnitude < 0.0001f)
                 awayFromMine = contactPoint - transform.position;

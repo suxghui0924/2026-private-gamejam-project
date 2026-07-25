@@ -27,7 +27,6 @@ namespace _Scripts.Suxghui.Mining
         private LSO_PlayerInventory _playerInventory;
         private LSO_Weight _cargoWeight;
         private SphereCollider _collectionTrigger;
-        private Coroutine _pendingSave;
 
         private void Awake()
         {
@@ -125,7 +124,7 @@ namespace _Scripts.Suxghui.Mining
                     ? _cargoWeight.Weight
                     : gameManager.SaveData.cargoWeight + taken;
                 gameManager.SetCargoWeight(savedWeight);
-                QueueSave(gameManager);
+                gameManager.Save();
             }
 
             string mineralName = !string.IsNullOrWhiteSpace(mineral?.mineralName)
@@ -138,29 +137,12 @@ namespace _Scripts.Suxghui.Mining
                     : taken;
             Debug.Log($"[원석 획득] {mineralName} {taken}kg (보유: {totalAmount}kg) - SaveData 동기화 완료", this);
 
-            NotificationManager.Notify($"원석 획득: {mineralName} {taken}kg");
-
             if (pickup.Amount > 0)
                 return;
 
             _nearbyPickups.Remove(pickup);
             _suctionStartedAt.Remove(pickup);
             Destroy(pickup.gameObject);
-        }
-
-        private void QueueSave(GameManager gameManager)
-        {
-            if (gameManager == null || _pendingSave != null)
-                return;
-            _pendingSave = StartCoroutine(SaveNextFrame(gameManager));
-        }
-
-        private System.Collections.IEnumerator SaveNextFrame(GameManager gameManager)
-        {
-            yield return new WaitForSecondsRealtime(0.1f);
-            if (gameManager != null)
-                gameManager.Save();
-            _pendingSave = null;
         }
 
         private void CacheInventory()

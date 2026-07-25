@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using _Scripts.LHS.Sound;
-using _Scripts.LHS.SoundManager;
 using _Scripts.LSO.Data;
 using _Scripts.Suxghui.Manager;
 using _Scripts.Suxghui.Manager.Module;
@@ -542,7 +540,6 @@ namespace _Scripts.Suxghui.Mining
         private Vector3[] _extractorJawRootOffsetsAtBoomEnd = Array.Empty<Vector3>();
         private Quaternion[] _extractorJawAnchorRotationOffsets = Array.Empty<Quaternion>();
         private bool _extractorRigCaptured;
-        private bool _extractorSoundPlaying;
         private readonly Dictionary<ParticleSystem, Color> _drillEffectBaseColors =
             new Dictionary<ParticleSystem, Color>();
         private readonly Dictionary<Light, float> _drillEffectBaseLightIntensities =
@@ -888,12 +885,9 @@ namespace _Scripts.Suxghui.Mining
                     {
                         SpawnOreReleaseVfx(target.WorldCenter);
                         GenerateMiningImpulse(type, true);
-                        PlayMiningSound("RobotArm2");
                     }
                 }
             }
-            if (type == MiningTechType.Extractor && canUse && _actionTimer <= 0f)
-                PlayMiningSound("RobotArm1");
             _actionTimer = _currentStats.ActionInterval;
         }
 
@@ -1264,7 +1258,6 @@ namespace _Scripts.Suxghui.Mining
                 ? asteroidExplosionVfxPrefab
                 : holderState != null ? holderState.ExplosionEffectPrefab : null;
             SpawnOreReleaseVfx(target.WorldCenter);
-            PlayMiningSound("Explosion");
             target.BreakIntoLooseMinerals(
                 explosionPrefab,
                 explosionVfxLifetime,
@@ -1742,7 +1735,6 @@ namespace _Scripts.Suxghui.Mining
                 _laserEffectsPlaying = false;
                 SetParticleSystemsPlaying(laserEffects, false);
                 UpdateLaserImpactVfx(false, Vector3.zero, Quaternion.identity);
-                StopMiningSound("Laser");
                 return;
             }
 
@@ -1754,7 +1746,6 @@ namespace _Scripts.Suxghui.Mining
 
             _laserEffectsPlaying = true;
             SetParticleSystemsPlaying(laserEffects, true);
-            PlayMiningSound("Laser");
         }
 
         private void SpawnOreReleaseVfx(Vector3 position)
@@ -1788,7 +1779,6 @@ namespace _Scripts.Suxghui.Mining
             {
                 _drillEffectsPlaying = false;
                 SetParticleSystemsPlaying(drillEffects, false);
-                StopMiningSound("Drill");
                 return;
             }
 
@@ -1800,19 +1790,6 @@ namespace _Scripts.Suxghui.Mining
 
             _drillEffectsPlaying = true;
             SetParticleSystemsPlaying(drillEffects, true);
-            PlayMiningSound("Drill");
-        }
-
-        private void PlayMiningSound(string id)
-        {
-            if (SoundManager.Instance != null)
-                SoundManager.Instance.Play(SoundType.SFX, id);
-        }
-
-        private void StopMiningSound(string id)
-        {
-            if (SoundManager.Instance != null)
-                SoundManager.Instance.Stop(SoundType.SFX, id);
         }
 
         private static void SetParticleSystemsPlaying(ParticleSystem[] effects, bool playing)
