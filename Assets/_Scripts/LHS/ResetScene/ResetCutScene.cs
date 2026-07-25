@@ -87,6 +87,7 @@ public class ResetCutScene : MonoBehaviour
               })
             .AppendInterval(4f);
         yield return _seq.WaitForCompletion();
+        SoundManager.Instance.Stop(SoundType.SFX,"Alert");
         GameManager.Instance.ResetSave();
         RestartGame();
     }
