@@ -128,6 +128,7 @@ namespace _Scripts.Suxghui.World
 
             _currentZone = detectedZone;
             OnZoneChanged?.Invoke(_currentZone);
+            NotificationManager.Notify($"구역 이동: {_currentZone}");
         }
 
         private void RemoveMissingZones()

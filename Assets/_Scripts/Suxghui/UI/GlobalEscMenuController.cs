@@ -1,7 +1,9 @@
 using _Scripts.Suxghui.Manager;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace _Scripts.Suxghui.UI
 {
@@ -17,6 +19,10 @@ namespace _Scripts.Suxghui.UI
         private static GlobalEscMenuController _instance;
         private GameObject _escCanvas;
         private bool _buttonsBound;
+        private float _timeScaleBeforePause = 1f;
+        private bool _cursorVisibleBeforePause;
+        private CursorLockMode _cursorLockModeBeforePause;
+        private bool _isPausedByMenu;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
@@ -53,7 +59,8 @@ namespace _Scripts.Suxghui.UI
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
             Rebind();
             if (_escCanvas == null) return;
-            _escCanvas.SetActive(!_escCanvas.activeSelf);
+            if (_escCanvas.activeSelf) CloseMenu();
+            else OpenMenu();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -94,11 +101,14 @@ namespace _Scripts.Suxghui.UI
                 DontDestroyOnLoad(_escCanvas);
 
             if (_buttonsBound) return;
-            BindButton("Start (2)", CloseMenu);
-            BindButton("Start (3)", OpenSettingsWindow);
-            BindButton("Start (1)", ExitGame);
+            // Prefer the actual button labels because Unity's auto-generated
+            // names (Start (1), Start (2), ...) can change between scene edits.
+            BindButtonByLabel("CONTINUE", CloseMenu);
+            BindButtonByLabel("SETTING", OpenSettingsWindow);
+            BindButtonByLabel("EXIT", ExitGame);
+            BindButtonsByOrderAsFallback();
             _buttonsBound = true;
-            _escCanvas.SetActive(false);
+            CloseMenu();
         }
 
         private void BindButton(string parentName, UnityEngine.Events.UnityAction action)
@@ -113,6 +123,32 @@ namespace _Scripts.Suxghui.UI
         private void CloseMenu()
         {
             if (_escCanvas != null) _escCanvas.SetActive(false);
+            if (_isPausedByMenu)
+            {
+                Time.timeScale = _timeScaleBeforePause <= 0f ? 1f : _timeScaleBeforePause;
+                Cursor.visible = _cursorVisibleBeforePause;
+                Cursor.lockState = _cursorLockModeBeforePause;
+                _isPausedByMenu = false;
+            }
+        }
+
+        private void OpenMenu()
+        {
+            if (_escCanvas == null) return;
+            EnsureEventSystem();
+            GraphicRaycaster raycaster = _escCanvas.GetComponent<GraphicRaycaster>();
+            if (raycaster == null) raycaster = _escCanvas.AddComponent<GraphicRaycaster>();
+            raycaster.enabled = true;
+            foreach (Button button in _escCanvas.GetComponentsInChildren<Button>(true))
+                button.interactable = true;
+            _timeScaleBeforePause = Time.timeScale;
+            _cursorVisibleBeforePause = Cursor.visible;
+            _cursorLockModeBeforePause = Cursor.lockState;
+            Time.timeScale = 0f;
+            _escCanvas.SetActive(true);
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            _isPausedByMenu = true;
         }
 
         private void OpenSettingsWindow()
@@ -183,6 +219,46 @@ namespace _Scripts.Suxghui.UI
             foreach (Button child in root.GetComponentsInChildren<Button>(true))
                 return child;
             return null;
+        }
+
+        private void BindButtonByLabel(string label, UnityEngine.Events.UnityAction action)
+        {
+            foreach (TMP_Text text in _escCanvas.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (!string.Equals(text.text?.Trim(), label, System.StringComparison.OrdinalIgnoreCase))
+                    continue;
+                Button button = text.GetComponentInParent<Button>();
+                if (button == null) button = FindButton(text.transform.parent);
+                if (button == null) continue;
+                button.onClick.RemoveListener(action);
+                button.onClick.AddListener(action);
+                return;
+            }
+        }
+
+        private void BindButtonsByOrderAsFallback()
+        {
+            Button[] buttons = _escCanvas.GetComponentsInChildren<Button>(true);
+            if (buttons.Length < 3) return;
+            BindButtonIfUnassigned(buttons[0], CloseMenu);
+            BindButtonIfUnassigned(buttons[1], OpenSettingsWindow);
+            BindButtonIfUnassigned(buttons[2], ExitGame);
+        }
+
+        private static void BindButtonIfUnassigned(Button button, UnityEngine.Events.UnityAction action)
+        {
+            if (button == null) return;
+            button.onClick.RemoveListener(action);
+            button.onClick.AddListener(action);
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (EventSystem.current != null) return;
+            GameObject host = new GameObject("GlobalEventSystem");
+            host.AddComponent<EventSystem>();
+            host.AddComponent<StandaloneInputModule>();
+            DontDestroyOnLoad(host);
         }
     }
 }
