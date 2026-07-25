@@ -73,10 +73,8 @@ namespace _Scripts.Suxghui.Mining
                 return;
 
             Vector3 desiredVelocity = toDestination.normalized * Mathf.Max(0f, maximumSpeed);
-            body.linearVelocity = Vector3.MoveTowards(
-                body.linearVelocity,
-                desiredVelocity,
-                Mathf.Max(0f, acceleration) * Time.fixedDeltaTime);
+            Vector3 nextPosition = body.position + desiredVelocity * Time.fixedDeltaTime;
+            body.MovePosition(nextPosition);
         }
 
         private Rigidbody EnsureRigidbody()
@@ -98,7 +96,10 @@ namespace _Scripts.Suxghui.Mining
                 return;
 
             body.useGravity = false;
-            body.isKinematic = !enableMotion;
+            // Collected chunks are moved by the suction code, not by the
+            // physics solver. Kinematic bodies avoid a costly dynamic-body
+            // simulation for every loose mineral in the tractor beam.
+            body.isKinematic = true;
             body.interpolation = RigidbodyInterpolation.Interpolate;
 
             Collider[] colliders = GetComponentsInChildren<Collider>(true);

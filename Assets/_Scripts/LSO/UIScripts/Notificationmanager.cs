@@ -1,6 +1,8 @@
 using UnityEngine;
 using DG.Tweening;
 using TMPro;
+using _Scripts.LHS.Sound;
+using _Scripts.LHS.SoundManager;
 
 /// <summary>
 /// 알림창 매니저.
@@ -16,6 +18,31 @@ using TMPro;
 /// </summary>
 public class NotificationManager : MonoBehaviour
 {
+    public static NotificationManager Instance { get; private set; }
+    private float _nextOreNotificationTime;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
+    public static void Notify(string message)
+    {
+        if (Instance == null || string.IsNullOrWhiteSpace(message)) return;
+        if (message.StartsWith("원석 획득") && Time.unscaledTime < Instance._nextOreNotificationTime)
+            return;
+        if (message.StartsWith("원석 획득"))
+            Instance._nextOreNotificationTime = Time.unscaledTime + 0.2f;
+        Instance.Show(message);
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.Play(SoundType.UI, "Click01");
+    }
     [Header("Prefab")]
     [SerializeField] private RectTransform notificationPrefab;  // 복사할 알림 프리팹
     [SerializeField] private RectTransform spawnParent;         // 생성될 부모 (보통 Canvas). 비우면 자기 자신

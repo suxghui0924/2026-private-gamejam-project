@@ -138,6 +138,8 @@ namespace _Scripts.Suxghui.Mining
                     : taken;
             Debug.Log($"[원석 획득] {mineralName} {taken}kg (보유: {totalAmount}kg) - SaveData 동기화 완료", this);
 
+            NotificationManager.Notify($"원석 획득: {mineralName} {taken}kg");
+
             if (pickup.Amount > 0)
                 return;
 

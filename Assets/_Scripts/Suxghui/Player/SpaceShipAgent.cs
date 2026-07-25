@@ -356,13 +356,13 @@ namespace _Scripts.Suxghui.Player
             bool moving = _throttle01 > jetThrottleThreshold;
             bool boosting = moving && _boosterInput;
 
-            if (moving && !boosting && !_jetSoundPlaying)
+            if (moving && !_jetSoundPlaying)
             {
                 if (SoundManager.Instance != null)
                     SoundManager.Instance.Play(SoundType.SFX, "JetIdle1");
                 _jetSoundPlaying = true;
             }
-            else if ((!moving || boosting) && _jetSoundPlaying)
+            else if (!moving && _jetSoundPlaying)
             {
                 if (SoundManager.Instance != null)
                     SoundManager.Instance.Stop(SoundType.SFX, "JetIdle1");

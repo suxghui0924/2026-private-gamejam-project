@@ -37,7 +37,7 @@ namespace _Scripts.Suxghui.World
 
             _detonated = true;
             if (SoundManager.Instance != null)
-                SoundManager.Instance.Play(SoundType.SFX, "Explosion");
+                SoundManager.Instance.Play(SoundType.SFX, "Explosion2");
             Vector3 awayFromMine = ship.ShipPosition - transform.position;
             if (awayFromMine.sqrMagnitude < 0.0001f)
                 awayFromMine = contactPoint - transform.position;

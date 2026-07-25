@@ -173,6 +173,12 @@ namespace _Scripts.Suxghui.UI
             }
 
             bool upgraded = module.TryUpgrade();
+            if (upgraded)
+                NotificationManager.Notify($"{module.Settings.DisplayName} 업그레이드 성공 (Lv.{module.Level})");
+            else if (module.CanUpgrade)
+                NotificationManager.Notify($"업그레이드 실패: {Mathf.Max(0, module.NextUpgradeCost - _manager.Wallet.Money)} 코인 부족");
+            else
+                NotificationManager.Notify("이미 최대 레벨입니다");
             Debug.Log(upgraded
                 ? $"[Upgrade] {module.Settings.DisplayName} upgraded to level {module.Level}."
                 : $"[Upgrade] Cannot upgrade {module.Settings.DisplayName}: insufficient coins or max level.", this);

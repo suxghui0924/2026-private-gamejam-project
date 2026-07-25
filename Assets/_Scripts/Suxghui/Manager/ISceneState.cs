@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace _Scripts.Suxghui.Manager
 {
     public interface ISceneState
@@ -66,6 +68,17 @@ namespace _Scripts.Suxghui.Manager
             if (_Scripts.LHS.SoundManager.SoundManager.Instance != null)
                 _Scripts.LHS.SoundManager.SoundManager.Instance.Play(
                     _Scripts.LHS.Sound.SoundType.BGM, "Space");
+
+            GameObject healing = GameObject.Find("HealingVFX");
+            if (healing != null)
+            {
+                healing.SetActive(true);
+                foreach (ParticleSystem particles in healing.GetComponentsInChildren<ParticleSystem>(true))
+                {
+                    particles.Clear(true);
+                    particles.Play(true);
+                }
+            }
         }
         public void Executor() { }
         public void Exit() => Manager.Save();
