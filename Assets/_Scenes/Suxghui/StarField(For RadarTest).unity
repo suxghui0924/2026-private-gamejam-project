@@ -8756,6 +8756,7 @@ MonoBehaviour:
   nearAimAssistDistance: 45
   targetStickDuration: 0.18
   centerCorrection: 0.45
+  preferredTargetDepthTolerance: 2
   crossHairSprite: {fileID: 21300000, guid: ef1d843a280a586418ede210d39b3b94, type: 3}
   crossHairSize: {x: 32, y: 32}
   idleColor: {r: 1, g: 1, b: 1, a: 1}
