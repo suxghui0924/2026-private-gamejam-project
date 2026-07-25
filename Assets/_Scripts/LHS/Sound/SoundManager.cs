@@ -26,7 +26,17 @@ namespace _Scripts.LHS.SoundManager
                 return;
             }
             Instance = this;
+            // SoundManager is sometimes placed under a scene container. Detach
+            // it first so Unity does not destroy it with the scene.
+            if (transform.parent != null)
+                transform.SetParent(null, true);
             DontDestroyOnLoad(gameObject);
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+                Instance = null;
         }
 
         private string MakeKey(SoundType type, string ID) => $"{type}_{ID}";

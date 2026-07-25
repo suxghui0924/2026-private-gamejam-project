@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using _Scripts.LHS.Sound;
+using _Scripts.LHS.SoundManager;
 using _Scripts.Suxghui.Agent;
 using _Scripts.Suxghui.Manager;
 using _Scripts.Suxghui.Player.Input;
@@ -61,6 +63,8 @@ namespace _Scripts.Suxghui.Player
 
         private bool _jetPlaying;
         private bool _boosterJetPlaying;
+        private bool _jetSoundPlaying;
+        private bool _boosterSoundPlaying;
 
         private Vector2 _moveInput;
         private Vector2 _flyInput;
@@ -352,6 +356,32 @@ namespace _Scripts.Suxghui.Player
             bool moving = _throttle01 > jetThrottleThreshold;
             bool boosting = moving && _boosterInput;
 
+            if (moving && !boosting && !_jetSoundPlaying)
+            {
+                if (SoundManager.Instance != null)
+                    SoundManager.Instance.Play(SoundType.SFX, "JetIdle1");
+                _jetSoundPlaying = true;
+            }
+            else if ((!moving || boosting) && _jetSoundPlaying)
+            {
+                if (SoundManager.Instance != null)
+                    SoundManager.Instance.Stop(SoundType.SFX, "JetIdle1");
+                _jetSoundPlaying = false;
+            }
+
+            if (boosting && !_boosterSoundPlaying)
+            {
+                if (SoundManager.Instance != null)
+                    SoundManager.Instance.Play(SoundType.SFX, "Fire");
+                _boosterSoundPlaying = true;
+            }
+            else if (!boosting && _boosterSoundPlaying)
+            {
+                if (SoundManager.Instance != null)
+                    SoundManager.Instance.Stop(SoundType.SFX, "Fire");
+                _boosterSoundPlaying = false;
+            }
+
             // While boosting, the blue booster flames replace the normal ones.
             SetParticlesPlaying(boosterJetEngineVfx, boosting, ref _boosterJetPlaying);
             SetParticlesPlaying(jetEngineVfx, moving && !boosting, ref _jetPlaying);
@@ -361,6 +391,14 @@ namespace _Scripts.Suxghui.Player
         {
             SetParticlesPlaying(boosterJetEngineVfx, false, ref _boosterJetPlaying);
             SetParticlesPlaying(jetEngineVfx, false, ref _jetPlaying);
+            if (_jetSoundPlaying)
+                if (SoundManager.Instance != null)
+                    SoundManager.Instance.Stop(SoundType.SFX, "JetIdle1");
+            if (_boosterSoundPlaying)
+                if (SoundManager.Instance != null)
+                    SoundManager.Instance.Stop(SoundType.SFX, "Fire");
+            _jetSoundPlaying = false;
+            _boosterSoundPlaying = false;
         }
 
         private static void SetParticlesPlaying(ParticleSystem[] systems, bool shouldPlay, ref bool state)

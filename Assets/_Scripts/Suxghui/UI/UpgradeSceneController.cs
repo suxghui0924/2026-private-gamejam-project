@@ -122,6 +122,20 @@ namespace _Scripts.Suxghui.UI
             for (int i = 0; i < _techRelays.Length; i++)
                 if (_techRelays[i] != null)
                     _techRelays[i].Bind(UpgradeCurrentTech);
+
+            // Also register a real Button listener. The scene art is Image-only
+            // in some variants, so the inspector OnClick list may be empty.
+            BindDirectButton(primaryRoot);
+            BindDirectButton(overlayRoot);
+        }
+
+        private void BindDirectButton(Transform target)
+        {
+            if (target == null) return;
+            Button button = target.GetComponent<Button>() ?? target.GetComponentInChildren<Button>(true);
+            if (button == null) return;
+            button.onClick.RemoveListener(UpgradeCurrentTech);
+            button.onClick.AddListener(UpgradeCurrentTech);
         }
 
         private static TechUpgradeClickRelay EnsureRelay(Transform target)

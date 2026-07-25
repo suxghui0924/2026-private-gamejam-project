@@ -40,3 +40,198 @@ MonoBehaviour:
     pitch: 1.15
     randomizePitch: 1
     pitchRange: {x: 1.05, y: 1.25}
+    useFade: 0
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: Click02
+    type: 1
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: 9aba2c7806a9e684aa39b630b0c85fda, type: 3}
+    volume: 1
+    looping: 0
+    pitch: 1
+    randomizePitch: 1
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 0
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: JetIdle1
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: 0d7dc956791d519438311182332e5215, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 0
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: JetIdle2
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: e3a13de0420b14749a05908f78d07dd5, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 0
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: JetIdle3
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: d9d2b80d2040317418d17291322ca02e, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 0
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: RobotArm1
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: fb0712c41fae34e439e64c40a9ed32ea, type: 3}
+    volume: 1
+    looping: 0
+    pitch: 1
+    randomizePitch: 1
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 0
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: RobotArm2
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: 5b145753d69f7964491ff0b92e108d75, type: 3}
+    volume: 1
+    looping: 0
+    pitch: 1
+    randomizePitch: 1
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 0
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: Wind
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: 55218278d396c244c91a8e18ff2201fb, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 0
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: Portal
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: c7c3d51c3c8b9ff4484b1f9f6eb33eba, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 0
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: Explosion
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: e23794a67cd895846a1c9fd0b79266e8, type: 3}
+    volume: 1
+    looping: 0
+    pitch: 1
+    randomizePitch: 1
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 0
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: Explosion2
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: a5673b8a575dba147839455495c78156, type: 3}
+    volume: 1
+    looping: 0
+    pitch: 1
+    randomizePitch: 1
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 0
+    fadeInDuration: 0.4
+    fadeOutDuration: 0.4
+  - soundID: Drill
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: 88c7ddd79f75f2c49b1abc6035428507, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 1
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: Fire
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: 4a7bd636a14e7864c8ef17e78e371de7, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 0
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: Fire2
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: 02e899def24fe2f4f8dbd8d72d3df61e, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 0
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: Light
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: b5cea93f19b849144baf5c447847a8d1, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 0
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: Alert
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: f2a26abb9307f12468b1fc54dceaf296, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 0
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.5
+    fadeOutDuration: 0.5
+  - soundID: Laser
+    type: 0
+    audioSourcePrefab: {fileID: 1112173385200990536, guid: 2d9fd342ce4376349aad06c0d3bfdf89, type: 3}
+    clip: {fileID: 8300000, guid: 3699c139a101c4e42a307eaee8a58393, type: 3}
+    volume: 1
+    looping: 1
+    pitch: 1
+    randomizePitch: 1
+    pitchRange: {x: 0.95, y: 1.05}
+    useFade: 1
+    fadeInDuration: 0.4
+    fadeOutDuration: 0.4
