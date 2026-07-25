@@ -92,12 +92,7 @@ namespace _Scripts.Suxghui.Mining
 
             MineralPickup pickup = ResolvePickup(other);
             if (pickup != null && pickup.IsCollectible && _nearbyPickups.Add(pickup))
-            {
                 _suctionStartedAt[pickup] = Time.time;
-                Rigidbody body = pickup.Body;
-                if (body != null)
-                    body.detectCollisions = false;
-            }
         }
 
         private void TryCollect(MineralPickup pickup)

@@ -191,7 +191,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2237375}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000056888194, y: -0.03580362, z: 0.0000000015526102, w: 0.99935883}
+  m_LocalRotation: {x: 0.00000005987619, y: -0.035803612, z: 0.0000000021451592, w: 0.9993589}
   m_LocalPosition: {x: 9.199684, y: 2.738719, z: -5.347908}
   m_LocalScale: {x: 149.98, y: 149.97997, z: 149.97997}
   m_ConstrainProportionsScale: 0
@@ -8766,7 +8766,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 975411758}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000056870817, y: -0.035803616, z: 0.0000000020374873, w: 0.9993589}
+  m_LocalRotation: {x: 0.000000059876186, y: -0.03580361, z: 0.0000000021451592, w: 0.9993589}
   m_LocalPosition: {x: 9.199684, y: 2.738719, z: -5.347908}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -47856,12 +47856,12 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.016
-  m_Center: {x: 0, y: -0.01, z: 0}
+  m_Radius: 0.012
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &880000000000000010
 GameObject:
   m_ObjectHideFlags: 0
@@ -84468,7 +84468,7 @@ GameObject:
   - component: {fileID: 8788586925315479040}
   m_Layer: 0
   m_Name: SpaceStation
-  m_TagString: Station
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
