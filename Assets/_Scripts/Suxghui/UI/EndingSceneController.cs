@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using _Scripts.LHS.SoundManager;
+using _Scripts.LHS.Sound;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;

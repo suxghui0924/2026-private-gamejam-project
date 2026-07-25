@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
+using _Scripts.LHS.Sound;
 
 namespace _Scripts.LHS.SoundManager
 {

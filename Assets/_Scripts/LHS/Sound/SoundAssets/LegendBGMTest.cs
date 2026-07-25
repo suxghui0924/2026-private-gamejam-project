@@ -1,5 +1,6 @@
 using System;
 using _Scripts.LHS.Sound;
+using _Scripts.LHS.SoundManager;
 using UnityEngine;
 
 public class LegendBGMTest : MonoBehaviour

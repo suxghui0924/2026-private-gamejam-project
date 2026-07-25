@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using _Scripts.LHS.SoundManager;
+using _Scripts.LHS.Sound;
 using UnityEngine;
 
 namespace _Scripts.Suxghui.UI
