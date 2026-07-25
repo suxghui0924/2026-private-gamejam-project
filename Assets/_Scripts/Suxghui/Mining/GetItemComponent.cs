@@ -15,6 +15,7 @@ namespace _Scripts.Suxghui.Mining
         [SerializeField, Min(0f)] private float minimumSuctionDuration = 0.15f;
         [SerializeField, Min(0f)] private float suctionAcceleration = 24f;
         [SerializeField, Min(0f)] private float maximumSuctionSpeed = 12f;
+        [SerializeField, Min(0.02f)] private float pickupScanInterval = 0.1f;
 
         [Header("Inventory Compatibility")]
         [Tooltip("현재 LSO 인벤토리와 저장용 GameManager 인벤토리를 함께 동기화합니다.")]
@@ -28,6 +29,8 @@ namespace _Scripts.Suxghui.Mining
         private LSO_Weight _cargoWeight;
         private SphereCollider _collectionTrigger;
         private Coroutine _pendingSave;
+        private readonly Collider[] _pickupScanBuffer = new Collider[64];
+        private float _nextPickupScanTime;
 
         private void Awake()
         {
@@ -58,6 +61,12 @@ namespace _Scripts.Suxghui.Mining
 
         private void FixedUpdate()
         {
+            if (Time.time >= _nextPickupScanTime)
+            {
+                _nextPickupScanTime = Time.time + pickupScanInterval;
+                ScanForPickups();
+            }
+
             if (_nearbyPickups.Count == 0 || GetRemainingCargoCapacity() <= 0)
                 return;
 
@@ -86,6 +95,21 @@ namespace _Scripts.Suxghui.Mining
             }
         }
 
+        private void ScanForPickups()
+        {
+            float radius = Mathf.Max(GetWorldCollectDistance(), _collectionTrigger != null
+                ? _collectionTrigger.radius * Mathf.Max(transform.lossyScale.x, transform.lossyScale.y, transform.lossyScale.z)
+                : 1f);
+            int count = Physics.OverlapSphereNonAlloc(
+                transform.position,
+                radius,
+                _pickupScanBuffer,
+                ~0,
+                QueryTriggerInteraction.Collide);
+            for (int i = 0; i < count; i++)
+                Track(_pickupScanBuffer[i]);
+        }
+
         private void Track(Collider other)
         {
             if (GetRemainingCargoCapacity() <= 0)
@@ -97,7 +121,13 @@ namespace _Scripts.Suxghui.Mining
                 _suctionStartedAt[pickup] = Time.time;
                 Rigidbody body = pickup.Body;
                 if (body != null)
-                    body.detectCollisions = false;
+                {
+                    body.linearVelocity = Vector3.zero;
+                    // Keep trigger detection enabled so collection remains
+                    // reliable while the body is moved kinematically.
+                    body.detectCollisions = true;
+                    body.isKinematic = true;
+                }
             }
         }
 

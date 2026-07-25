@@ -98,10 +98,10 @@ namespace _Scripts.Suxghui.Mining
                 return;
 
             body.useGravity = false;
-            // Collected chunks are moved by the suction code, not by the
-            // physics solver. Kinematic bodies avoid a costly dynamic-body
-            // simulation for every loose mineral in the tractor beam.
-            body.isKinematic = true;
+            // Keep newly-launched chunks dynamic so they scatter naturally.
+            // GetItemComponent switches a pickup to kinematic only after it
+            // enters the suction trigger.
+            body.isKinematic = !enableMotion;
             body.interpolation = RigidbodyInterpolation.Interpolate;
 
             Collider[] colliders = GetComponentsInChildren<Collider>(true);
