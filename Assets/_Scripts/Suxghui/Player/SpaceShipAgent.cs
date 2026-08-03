@@ -5,6 +5,7 @@ using _Scripts.LHS.SoundManager;
 using _Scripts.Suxghui.Agent;
 using _Scripts.Suxghui.Manager;
 using _Scripts.Suxghui.Player.Input;
+using _Scripts.Suxghui.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Cinemachine;
@@ -114,6 +115,15 @@ namespace _Scripts.Suxghui.Player
 
         private void Update()
         {
+            // Do not let the ship's click-to-lock camera input steal the first
+            // click from the ESC panel.  This was why the menu opened but its
+            // buttons were not clickable in StarField.
+            if (GlobalEscMenuController.IsMenuOpen)
+            {
+                SetCursorLocked(false);
+                return;
+            }
+
             if (!HealthComponent.currentHeartbeat)
             {
                 if (_cursorLocked)
@@ -124,6 +134,16 @@ namespace _Scripts.Suxghui.Player
 
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
                 SetCursorLocked(false);
+
+            // Space is the emergency throttle cut.  It is intentionally a
+            // press action (not a held action) so releasing Space does not
+            // immediately accelerate the ship again.
+            if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+            {
+                _throttle01 = 0f;
+                _forwardSpeedFactor = 0f;
+                MovementComponent?.Stop();
+            }
 
             if (!_cursorLocked && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
                 SetCursorLocked(true);

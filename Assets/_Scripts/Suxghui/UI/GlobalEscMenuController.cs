@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 namespace _Scripts.Suxghui.UI
 {
@@ -23,6 +24,10 @@ namespace _Scripts.Suxghui.UI
         private bool _cursorVisibleBeforePause;
         private CursorLockMode _cursorLockModeBeforePause;
         private bool _isPausedByMenu;
+
+        /// <summary>True while the persistent in-game pause panel is open.</summary>
+        public static bool IsMenuOpen => _instance != null &&
+            _instance._escCanvas != null && _instance._escCanvas.activeSelf;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
@@ -56,7 +61,13 @@ namespace _Scripts.Suxghui.UI
 
         private void Update()
         {
-            if (!Input.GetKeyDown(KeyCode.Escape)) return;
+            // The project uses the new Input System.  Input.GetKeyDown can be
+            // disabled when Active Input Handling is set to Input System Only,
+            // which made ESC appear to work in one scene but not in StarField.
+            bool escapePressed = Keyboard.current != null
+                ? Keyboard.current.escapeKey.wasPressedThisFrame
+                : Input.GetKeyDown(KeyCode.Escape);
+            if (!escapePressed) return;
             Rebind();
             if (_escCanvas == null) return;
             if (_escCanvas.activeSelf) CloseMenu();
@@ -82,6 +93,28 @@ namespace _Scripts.Suxghui.UI
                 _escCanvas = FindCanvas("ESCCanvas");
 
             if (_escCanvas == null) return;
+
+            // The source scene currently stores ESCCanvas with a zero scale
+            // (it was used as an editor-only holder).  A zero-scaled canvas
+            // makes the panel look present in the hierarchy but gives the
+            // GraphicRaycaster no clickable screen area at runtime.
+            RectTransform canvasRect = _escCanvas.transform as RectTransform;
+            if (canvasRect != null && canvasRect.localScale.sqrMagnitude < 0.0001f)
+                canvasRect.localScale = Vector3.one;
+
+            Canvas canvasComponent = _escCanvas.GetComponent<Canvas>();
+            if (canvasComponent != null)
+            {
+                canvasComponent.overrideSorting = true;
+                canvasComponent.sortingOrder = 1000;
+                canvasComponent.enabled = true;
+            }
+
+            CanvasGroup canvasGroup = _escCanvas.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = _escCanvas.AddComponent<CanvasGroup>();
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
 
             // Returning to the main menu creates a new scene copy. Keep only
             // the persistent panel so two ESC overlays cannot stack.
@@ -139,6 +172,18 @@ namespace _Scripts.Suxghui.UI
             GraphicRaycaster raycaster = _escCanvas.GetComponent<GraphicRaycaster>();
             if (raycaster == null) raycaster = _escCanvas.AddComponent<GraphicRaycaster>();
             raycaster.enabled = true;
+            Canvas canvas = _escCanvas.GetComponent<Canvas>();
+            if (canvas != null)
+            {
+                canvas.overrideSorting = true;
+                canvas.sortingOrder = 1000;
+                canvas.enabled = true;
+            }
+            CanvasGroup group = _escCanvas.GetComponent<CanvasGroup>();
+            if (group == null) group = _escCanvas.AddComponent<CanvasGroup>();
+            group.alpha = 1f;
+            group.interactable = true;
+            group.blocksRaycasts = true;
             foreach (Button button in _escCanvas.GetComponentsInChildren<Button>(true))
                 button.interactable = true;
             _timeScaleBeforePause = Time.timeScale;
@@ -146,6 +191,7 @@ namespace _Scripts.Suxghui.UI
             _cursorLockModeBeforePause = Cursor.lockState;
             Time.timeScale = 0f;
             _escCanvas.SetActive(true);
+            EventSystem.current?.SetSelectedGameObject(null);
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
             _isPausedByMenu = true;
@@ -254,7 +300,13 @@ namespace _Scripts.Suxghui.UI
 
         private static void EnsureEventSystem()
         {
-            if (EventSystem.current != null) return;
+            if (EventSystem.current != null)
+            {
+                EventSystem.current.enabled = true;
+                BaseInputModule input = EventSystem.current.GetComponent<BaseInputModule>();
+                if (input != null) input.enabled = true;
+                return;
+            }
             GameObject host = new GameObject("GlobalEventSystem");
             host.AddComponent<EventSystem>();
             host.AddComponent<StandaloneInputModule>();
